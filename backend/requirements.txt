@@ -1,0 +1,55 @@
+# Django y frameworks web
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+django-filter==23.5
+django-extensions==3.2.3
+
+# Autenticación y JWT
+djangorestframework-simplejwt==5.3.0
+django-allauth==0.57.0
+
+# Base de datos y GIS
+psycopg2-binary==2.9.9
+django-environ==0.11.2
+GDAL==3.6.2
+django-leaflet==0.30.1
+
+# Geolocalización y mapas
+geopy==2.4.1
+folium==0.15.0
+
+# Celery para tareas asíncronas
+celery==5.3.4
+redis==5.0.1
+django-celery-beat==2.5.0
+django-celery-results==2.5.1
+
+# Archivos multimedia
+Pillow==10.1.0
+django-storages==1.14.2
+boto3==1.34.0
+
+# API y documentación
+drf-spectacular==0.26.5
+django-debug-toolbar==4.2.0
+
+# Validación y serialización
+marshmallow==3.20.1
+jsonschema==4.20.0
+
+# Monitoreo y logging
+sentry-sdk==1.39.1
+structlog==23.2.0
+
+# Utilidades
+python-decouple==3.8
+requests==2.31.0
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Desarrollo
+pytest==7.4.3
+pytest-django==4.7.0
+factory-boy==3.3.0
+coverage==7.3.2

@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # PostgreSQL con PostGIS
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: residuos_db
+    environment:
+      POSTGRES_DB: residuos_latacunga
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - residuos_network
+    restart: unless-stopped
+
+  # Django Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: residuos_backend
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgresql://postgres:postgres123@db:5432/residuos_latacunga
+      - SECRET_KEY=tu_clave_secreta_muy_segura_aqui
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+    volumes:
+      - ./backend:/app
+      - media_files:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    networks:
+      - residuos_network
+    restart: unless-stopped
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: residuos_frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000/api
+      - REACT_APP_WEBSOCKET_URL=ws://localhost:8000/ws
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    networks:
+      - residuos_network
+    restart: unless-stopped
+
+  # Redis para Celery/cache
+  redis:
+    image: redis:7-alpine
+    container_name: residuos_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - residuos_network
+    restart: unless-stopped
+
+  # Celery Worker
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: residuos_worker
+    command: celery -A config worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres123@db:5432/residuos_latacunga
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=tu_clave_secreta_muy_segura_aqui
+    volumes:
+      - ./backend:/app
+      - media_files:/app/media
+    depends_on:
+      - db
+      - redis
+    networks:
+      - residuos_network
+    restart: unless-stopped
+
+  # Nginx Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: residuos_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - media_files:/var/www/media
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - residuos_network
+    restart: unless-stopped
+
+networks:
+  residuos_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_files:
