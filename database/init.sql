@@ -353,9 +353,17 @@ END$$;
 -- Sample constraints / validations
 -- -----------------------------
 -- Phone format check (E.164 basic) - optional but helpful
-ALTER TABLE IF EXISTS users
-  ADD CONSTRAINT IF NOT EXISTS chk_users_phone_e164
-  CHECK (phone IS NULL OR phone ~ '^\\+[1-9][0-9]{7,14}$');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'chk_users_phone_e164' 
+    AND table_name = 'users'
+  ) THEN
+    ALTER TABLE users ADD CONSTRAINT chk_users_phone_e164
+    CHECK (phone IS NULL OR phone ~ '^\\+[1-9][0-9]{7,14}$');
+  END IF;
+END$$;
 
 -- -----------------------------
 -- Final notes

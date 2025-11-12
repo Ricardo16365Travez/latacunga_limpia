@@ -20,14 +20,14 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     
-    # API Endpoints
-    path('api/auth/', include('apps.authentication.urls')),
-    path('api/reports/', include('apps.reports.urls')),
-    path('api/tasks/', include('apps.tasks.urls')),
-    path('api/routes/', include('apps.routes.urls')),
-    path('api/notifications/', include('apps.notifications.urls')),
-    path('api/sync/', include('apps.sync.urls')),
-    path('api/audit/', include('apps.audit.urls')),
+    # API Endpoints (comentados temporalmente hasta implementar las apps)
+    # path('api/auth/', include('apps.authentication.urls')),
+    # path('api/reports/', include('apps.reports.urls')),
+    # path('api/tasks/', include('apps.tasks.urls')),
+    # path('api/routes/', include('apps.routes.urls')),
+    # path('api/notifications/', include('apps.notifications.urls')),
+    # path('api/sync/', include('apps.sync.urls')),
+    # path('api/audit/', include('apps.audit.urls')),
 ]
 
 # Servir archivos media en desarrollo

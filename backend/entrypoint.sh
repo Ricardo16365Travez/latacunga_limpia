@@ -2,8 +2,8 @@
 
 # Esperar a que la base de datos esté disponible
 echo "Esperando a que la base de datos esté disponible..."
-while ! nc -z db 5432; do
-  sleep 0.1
+while ! python -c "import psycopg2; psycopg2.connect(host='db', port=5432, user='postgres', password='postgres123', dbname='residuos_latacunga')" 2>/dev/null; do
+  sleep 1
 done
 echo "Base de datos disponible!"
 
