@@ -41,7 +41,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    # 'apps.authentication',
+    'apps.authentication',
     # 'apps.reports',
     # 'apps.tasks',
     # 'apps.notifications',
@@ -134,8 +134,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Custom User Model (comentado temporalmente)
-# AUTH_USER_MODEL = 'authentication.User'
+# Custom User Model
+AUTH_USER_MODEL = 'authentication.User'
 
 # Django Rest Framework
 REST_FRAMEWORK = {
@@ -185,6 +185,9 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+# RabbitMQ Configuration
+RABBITMQ_URL = config('RABBITMQ_URL', default='amqp://admin:admin123@rabbitmq:5672/')
 
 # Leaflet Configuration
 LEAFLET_CONFIG = {

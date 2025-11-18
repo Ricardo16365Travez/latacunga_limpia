@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ThemeProvider, 
   createTheme, 
@@ -11,8 +11,14 @@ import {
   Card,
   CardContent,
   Grid,
-  Button
+  Button,
+  IconButton,
+  Menu,
+  MenuItem
 } from '@mui/material';
+import { AccountCircle, ExitToApp } from '@mui/icons-material';
+import Login from './components/Auth/Login';
+import Dashboard from './components/Layout/Dashboard';
 
 const theme = createTheme({
   palette: {
@@ -25,7 +31,61 @@ const theme = createTheme({
   },
 });
 
+interface User {
+  id: number;
+  email: string;
+  phone: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  is_active: boolean;
+}
+
 function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    // Verificar si hay un usuario logueado al cargar la app
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('access_token');
+    
+    if (storedUser && token) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.clear();
+      }
+    }
+  }, []);
+
+  const handleLoginSuccess = (userData: User, tokens: any) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    setUser(null);
+    setAnchorEl(null);
+  };
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  if (!user) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Login onLoginSuccess={handleLoginSuccess} />
+      </ThemeProvider>
+    );
+  }
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -35,107 +95,41 @@ function App() {
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               🗂️ Gestión de Residuos Latacunga
             </Typography>
+            <Typography variant="body2" sx={{ mr: 2 }}>
+              {user.first_name} {user.last_name} ({user.role})
+            </Typography>
+            <IconButton
+              size="large"
+              edge="end"
+              color="inherit"
+              onClick={handleMenuClick}
+            >
+              <AccountCircle />
+            </IconButton>
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorEl}
+              anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+            >
+              <MenuItem onClick={handleLogout}>
+                <ExitToApp sx={{ mr: 1 }} />
+                Cerrar Sesión
+              </MenuItem>
+            </Menu>
           </Toolbar>
         </AppBar>
         
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h4" component="h1" gutterBottom color="primary">
-                    ¡Bienvenido al Sistema de Gestión de Residuos!
-                  </Typography>
-                  <Typography variant="body1" paragraph>
-                    Plataforma web modular diseñada para centralizar reportes ciudadanos, 
-                    gestionar tareas operativas de recolección y limpieza, y optimizar el 
-                    control administrativo del servicio de aseo urbano en Latacunga, Ecuador.
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    🏛️ Panel de Administración
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Accede al panel de administración de Django para gestionar usuarios y configuraciones.
-                  </Typography>
-                  <Button 
-                    variant="contained" 
-                    color="primary"
-                    onClick={() => window.open('http://localhost:8000/admin', '_blank')}
-                  >
-                    Ir a Admin
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    📚 Documentación API
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Explora la documentación interactiva de la API REST del sistema.
-                  </Typography>
-                  <Button 
-                    variant="outlined" 
-                    color="primary"
-                    onClick={() => window.open('http://localhost:8000/api/docs', '_blank')}
-                  >
-                    Ver API Docs
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              🏗️ Estado del Sistema
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
-                  <CardContent>
-                    <Typography variant="h6">Backend</Typography>
-                    <Typography variant="body2">✅ Funcionando</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
-                  <CardContent>
-                    <Typography variant="h6">Frontend</Typography>
-                    <Typography variant="body2">✅ Funcionando</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
-                  <CardContent>
-                    <Typography variant="h6">Base de Datos</Typography>
-                    <Typography variant="body2">✅ PostgreSQL + PostGIS</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
-                  <CardContent>
-                    <Typography variant="h6">Redis</Typography>
-                    <Typography variant="body2">✅ Cache y Cola</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </Box>
-        </Container>
+        <Dashboard userRole={user.role} />
       </Box>
     </ThemeProvider>
   );
