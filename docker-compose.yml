@@ -62,6 +62,29 @@ services:
       - residuos_network
     restart: unless-stopped
 
+  # RabbitMQ para mensajería
+  rabbitmq:
+    image: mrengineer09/rabbitmq:plugins
+    container_name: residuos_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - residuos_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:15672/api/alarms"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   # Redis para Celery/cache
   redis:
     image: redis:7-alpine
@@ -120,4 +143,5 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  rabbitmq_data:
   media_files:
