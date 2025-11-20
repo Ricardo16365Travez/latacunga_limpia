@@ -12,8 +12,13 @@ django-allauth==0.57.0
 # Base de datos y GIS
 psycopg2-binary==2.9.9
 django-environ==0.11.2
+dj-database-url==2.1.0
 GDAL==3.6.2
 django-leaflet==0.30.1
+
+# Supabase Integration
+supabase==2.7.4
+postgrest==0.13.2
 
 # Geolocalización y mapas
 geopy==2.4.1

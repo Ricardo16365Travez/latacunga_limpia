@@ -313,6 +313,20 @@ def health_check(request):
     })
 
 
+@api_view(['GET', 'POST', 'OPTIONS'])
+@permission_classes([permissions.AllowAny])
+def debug_cors(request):
+    """Endpoint de debug para verificar CORS y conectividad."""
+    return Response({
+        'method': request.method,
+        'headers': dict(request.headers),
+        'origin': request.META.get('HTTP_ORIGIN'),
+        'user_agent': request.META.get('HTTP_USER_AGENT'),
+        'timestamp': timezone.now(),
+        'message': 'Frontend-Backend connection working!'
+    })
+
+
 def _check_rabbitmq_connection():
     """Verificar conexión con RabbitMQ."""
     try:

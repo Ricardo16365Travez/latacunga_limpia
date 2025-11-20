@@ -6,6 +6,11 @@ import os
 from pathlib import Path
 from decouple import config
 
+# Supabase Configuration
+SUPABASE_URL = config('SUPABASE_URL', default='https://ancwrsnnrchgwzrrbmwc.supabase.co')
+SUPABASE_ANON_KEY = config('SUPABASE_KEY', default='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuY3dyc25ucmNoZ3d6cnJibXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0ODkyOTEsImV4cCI6MjA3OTA2NTI5MX0.HpqWcjTTDHDrHjBlT3neJaqNFKqF9KtUSWQPsZNzOKo')
+SUPABASE_SERVICE_ROLE_KEY = config('SUPABASE_SERVICE_ROLE_KEY', default='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuY3dyc25ucmNoZ3d6cnJibXdjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzQ4OTI5MSwiZXhwIjoyMDc5MDY1MjkxfQ.8tFI7F5MjmPKJ_qVHzr3rG0TcYcVBf9ePBsjdyMdSe4')
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -83,7 +88,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database
+# Database Configuration - PostgreSQL Local con Servicios Supabase
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
@@ -170,13 +175,39 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
 }
 
-# CORS Settings
+# CORS Settings - Configuración corregida para puerto 3001
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:3001", 
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "https://ancwrsnnrchgwzrrbmwc.supabase.co",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False  # Para seguridad en producción
+
+# Headers adicionales para CORS
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOWED_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 # Celery Configuration
 CELERY_BROKER_URL = config('REDIS_URL', default='redis://redis:6379/0')

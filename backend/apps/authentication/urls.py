@@ -8,7 +8,8 @@ from .views import (
     OTPRequestView,
     OTPVerifyView,
     LogoutView,
-    health_check
+    health_check,
+    debug_cors
 )
 
 urlpatterns = [
@@ -30,4 +31,5 @@ urlpatterns = [
     
     # Estado del servicio
     path('health/', health_check, name='auth_health'),
+    path('debug/', debug_cors, name='debug_cors'),
 ]

@@ -19,17 +19,29 @@ services:
       - residuos_network
     restart: unless-stopped
 
-  # Django Backend
+  # Django Backend con Supabase
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: residuos_backend
+    env_file:
+      - .env
     environment:
       - DEBUG=1
-      - DATABASE_URL=postgresql://postgres:postgres123@db:5432/residuos_latacunga
-      - SECRET_KEY=tu_clave_secreta_muy_segura_aqui
-      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - DB_ENGINE=${DB_ENGINE}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - REDIS_URL=${REDIS_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
     volumes:
       - ./backend:/app
       - media_files:/app/media
@@ -38,6 +50,7 @@ services:
     depends_on:
       - db
       - redis
+      - rabbitmq
     networks:
       - residuos_network
     restart: unless-stopped
