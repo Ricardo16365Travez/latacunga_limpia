@@ -1,4 +1,5 @@
 import React from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   Container,
   Grid,
@@ -8,12 +9,19 @@ import {
   Button,
   Box,
 } from '@mui/material';
+import IncidentsPage from '../Incidents/IncidentsPage';
+import RoutesPage from '../Routes/RoutesPage';
+import TasksPage from '../Tasks/TasksPage';
+import NotificationsPage from '../Notifications/NotificationsPage';
+import ReportsPage from '../Reports/ReportsPage';
 
 interface DashboardProps {
   userRole: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
+const HomePage: React.FC<{ userRole: string }> = ({ userRole }) => {
+  const navigate = useNavigate();
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Grid container spacing={3}>
@@ -33,7 +41,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
-                  <Card variant="outlined" sx={{ p: 2 }}>
+                  <Card variant="outlined" sx={{ p: 2, cursor: 'pointer' }} onClick={() => navigate('/incidents')}>
                     <Typography variant="h6" color="primary" gutterBottom>
                       📊 Reportes Ciudadanos
                     </Typography>
@@ -44,7 +52,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
                   </Card>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Card variant="outlined" sx={{ p: 2 }}>
+                  <Card variant="outlined" sx={{ p: 2, cursor: 'pointer' }} onClick={() => navigate('/routes')}>
                     <Typography variant="h6" color="primary" gutterBottom>
                       🗺️ Gestión de Rutas
                     </Typography>
@@ -55,7 +63,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
                   </Card>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Card variant="outlined" sx={{ p: 2 }}>
+                  <Card variant="outlined" sx={{ p: 2, cursor: 'pointer' }} onClick={() => navigate('/tasks')}>
                     <Typography variant="h6" color="primary" gutterBottom>
                       ✅ Gestión de Tareas
                     </Typography>
@@ -66,7 +74,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
                   </Card>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Card variant="outlined" sx={{ p: 2 }}>
+                  <Card variant="outlined" sx={{ p: 2, cursor: 'pointer' }} onClick={() => navigate('/reports')}>
                     <Typography variant="h6" color="primary" gutterBottom>
                       📈 Reportes y Estadísticas
                     </Typography>
@@ -93,9 +101,9 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
                     variant="contained" 
                     fullWidth 
                     sx={{ py: 2 }}
-                    disabled
+                    onClick={() => navigate('/incidents')}
                   >
-                    📝 Reportes
+                    📝 Incidencias
                   </Button>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -103,7 +111,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
                     variant="contained" 
                     fullWidth 
                     sx={{ py: 2 }}
-                    disabled
+                    onClick={() => navigate('/routes')}
                   >
                     🗺️ Rutas
                   </Button>
@@ -113,7 +121,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
                     variant="contained" 
                     fullWidth 
                     sx={{ py: 2 }}
-                    disabled
+                    onClick={() => navigate('/tasks')}
                   >
                     ✅ Tareas
                   </Button>
@@ -123,14 +131,23 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
                     variant="contained" 
                     fullWidth 
                     sx={{ py: 2 }}
-                    disabled
+                    onClick={() => navigate('/reports')}
                   >
                     📊 Estadísticas
                   </Button>
                 </Grid>
               </Grid>
+              <Box sx={{ mt: 2 }}>
+                <Button 
+                  variant="outlined" 
+                  fullWidth 
+                  onClick={() => navigate('/notifications')}
+                >
+                  🔔 Notificaciones
+                </Button>
+              </Box>
               <Typography variant="body2" sx={{ mt: 2 }} color="text.secondary">
-                Sistema con autenticación RabbitMQ integrada y gestión de roles.
+                Sistema con autenticación JWT integrada y gestión de roles.
               </Typography>
             </CardContent>
           </Card>
@@ -179,6 +196,19 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
         </Grid>
       </Grid>
     </Container>
+  );
+};
+
+const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage userRole={userRole} />} />
+      <Route path="/incidents" element={<IncidentsPage />} />
+      <Route path="/routes" element={<RoutesPage />} />
+      <Route path="/tasks" element={<TasksPage />} />
+      <Route path="/notifications" element={<NotificationsPage />} />
+      <Route path="/reports" element={<ReportsPage />} />
+    </Routes>
   );
 };
 

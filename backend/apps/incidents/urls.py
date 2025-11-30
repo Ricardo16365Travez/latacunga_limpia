@@ -10,6 +10,4 @@ from .views import IncidentViewSet
 router = DefaultRouter()
 router.register(r'incidents', IncidentViewSet, basename='incident')
 
-urlpatterns = [
-    path('v1/', include(router.urls)),
-]
+urlpatterns = router.urls

@@ -7,14 +7,14 @@ from .models import Incident, IncidentAttachment, IncidentEvent, OutboxEvent
 class IncidentAdmin(OSMGeoAdmin):
     """Admin para incidentes con soporte de mapas"""
     
-    list_display = ['id', 'title', 'type', 'status', 'reporter_kind', 'incident_day', 'created_at']
-    list_filter = ['status', 'type', 'reporter_kind', 'created_at']
-    search_fields = ['title', 'description', 'address']
-    readonly_fields = ['id', 'created_at', 'updated_at', 'photos_count']
+    list_display = ['id', 'incident_type', 'status', 'reporter_kind', 'created_at']
+    list_filter = ['status', 'incident_type', 'reporter_kind', 'created_at']
+    search_fields = ['description', 'address']
+    readonly_fields = ['id', 'created_at', 'updated_at']
     
     fieldsets = (
         ('Información Principal', {
-            'fields': ('id', 'type', 'title', 'description', 'status')
+            'fields': ('id', 'incident_type', 'description', 'status')
         }),
         ('Reportante', {
             'fields': ('reporter_kind', 'reporter_id')
@@ -22,8 +22,8 @@ class IncidentAdmin(OSMGeoAdmin):
         ('Ubicación', {
             'fields': ('location', 'address')
         }),
-        ('Detalles', {
-            'fields': ('incident_day', 'photos_count', 'idempotency_key')
+        ('Foto', {
+            'fields': ('photo_url',)
         }),
         ('Metadatos', {
             'fields': ('created_at', 'updated_at'),

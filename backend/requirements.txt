@@ -18,17 +18,35 @@ django-leaflet==0.30.1
 
 # Supabase Integration
 supabase==2.7.4
-postgrest==0.13.2
+postgrest>=0.14,<0.17
 
 # Geolocalización y mapas
 geopy==2.4.1
 folium==0.15.0
+
+# OSRM Integration y geometría espacial
+requests==2.31.0
+djangorestframework-gis==1.0
+
+# Generación de reportes
+reportlab==4.0.7
+openpyxl==3.1.2
+Pillow==10.1.0
 
 # Celery para tareas asíncronas y RabbitMQ
 celery==5.3.4
 redis==5.0.1
 django-celery-beat==2.5.0
 django-celery-results==2.5.1
+pika==1.3.2
+kombu==5.3.4
+
+# WebSockets y Channels para notificaciones en tiempo real
+channels==4.0.0
+channels-redis==4.1.0
+daphne==4.0.0
+
+# Archivos multimedia
 pika==1.3.2
 kombu==5.3.4
 
@@ -51,12 +69,13 @@ structlog==23.2.0
 
 # Utilidades
 python-decouple==3.8
-requests==2.31.0
 python-dateutil==2.8.2
 pytz==2023.3
 
-# Desarrollo
+# Desarrollo y Testing BDD
 pytest==7.4.3
 pytest-django==4.7.0
 factory-boy==3.3.0
 coverage==7.3.2
+behave==1.2.6
+behave-django==1.4.0

@@ -28,36 +28,51 @@ class IncidentEventSerializer(serializers.ModelSerializer):
 class IncidentSerializer(serializers.ModelSerializer):
     """Serializer principal para incidentes"""
     
-    latitude = serializers.FloatField(write_only=True)
-    longitude = serializers.FloatField(write_only=True)
+    latitude = serializers.FloatField(write_only=True, required=False)
+    longitude = serializers.FloatField(write_only=True, required=False)
+    
+    # Campos con nombres en español para compatibilidad con frontend
+    tipo = serializers.CharField(source='incident_type', required=False)
+    descripcion = serializers.CharField(source='description', required=False)
+    estado = serializers.CharField(source='status', required=False)
+    direccion = serializers.CharField(source='address', required=False)
+    ubicacion = serializers.SerializerMethodField()
     
     # Campos calculados para lectura
     lat = serializers.SerializerMethodField()
     lon = serializers.SerializerMethodField()
     
-    attachments = IncidentAttachmentSerializer(many=True, read_only=True)
-    events = IncidentEventSerializer(many=True, read_only=True)
-    
     class Meta:
         model = Incident
         fields = [
             'id', 'reporter_kind', 'reporter_id', 
-            'type', 'title', 'description',
+            'tipo', 'descripcion', 'estado', 'direccion',
             'latitude', 'longitude', 'lat', 'lon',
-            'address', 'status', 'incident_day', 'photos_count',
-            'idempotency_key', 
-            'attachments', 'events',
+            'ubicacion', 'photo_url',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'reporter_id', 'created_at', 'updated_at']
     
+    def get_ubicacion(self, obj):
+        """Retorna ubicación en formato GeoJSON"""
+        if obj.location:
+            return {
+                'type': 'Point',
+                'coordinates': [obj.location.x, obj.location.y]
+            }
+        return None
+    
     def get_lat(self, obj):
         """Retorna latitud del punto"""
-        return obj.latitude
+        if obj.location:
+            return obj.location.y
+        return None
     
     def get_lon(self, obj):
         """Retorna longitud del punto"""
-        return obj.longitude
+        if obj.location:
+            return obj.location.x
+        return None
     
     def create(self, validated_data):
         """Crea un incidente con ubicación geográfica"""
@@ -81,17 +96,19 @@ class IncidentSerializer(serializers.ModelSerializer):
 
 class IncidentCreateSerializer(serializers.ModelSerializer):
     """
-    Serializer para crear incidentes desde app móvil.
-    Compatible con el formato del incident-service de Go.
+    Serializer para crear incidentes desde app móvil y frontend.
+    Acepta campos en español para compatibilidad.
     """
     
-    latitude = serializers.FloatField(required=True)
-    longitude = serializers.FloatField(required=True)
-    idempotency_key = serializers.CharField(
-        required=False, 
-        allow_blank=True,
-        help_text='Clave para prevenir duplicados (offline-first)'
-    )
+    latitude = serializers.FloatField(required=False)
+    longitude = serializers.FloatField(required=False)
+    
+    # Campos en español
+    tipo = serializers.CharField(source='incident_type', required=False)
+    descripcion = serializers.CharField(source='description', required=False)
+    direccion = serializers.CharField(source='address', required=False)
+    ubicacion = serializers.DictField(required=False, write_only=True)
+    
     photo_url = serializers.URLField(
         required=False,
         allow_blank=True,
@@ -101,46 +118,56 @@ class IncidentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Incident
         fields = [
-            'idempotency_key',
-            'type', 'title', 'description',
-            'latitude', 'longitude', 'address',
-            'photo_url'
+            'tipo', 'descripcion', 'direccion',
+            'latitude', 'longitude', 'ubicacion',
+            'photo_url', 'reporter_kind'
         ]
     
     def validate(self, data):
         """Validaciones adicionales"""
-        # Validar rango de coordenadas
-        if not (-90 <= data['latitude'] <= 90):
-            raise serializers.ValidationError({
-                'latitude': 'Debe estar entre -90 y 90'
-            })
-        if not (-180 <= data['longitude'] <= 180):
-            raise serializers.ValidationError({
-                'longitude': 'Debe estar entre -180 y 180'
-            })
+        # Si viene ubicacion como objeto GeoJSON, extraer coordenadas
+        if 'ubicacion' in data:
+            coords = data['ubicacion'].get('coordinates', [])
+            if len(coords) == 2:
+                data['longitude'] = coords[0]
+                data['latitude'] = coords[1]
         
-        # Si hay idempotency_key, verificar que no exista
-        idempotency_key = data.get('idempotency_key')
-        if idempotency_key:
-            if Incident.objects.filter(idempotency_key=idempotency_key).exists():
+        # Validar rango de coordenadas si están presentes
+        if 'latitude' in data and data['latitude'] is not None:
+            if not (-90 <= data['latitude'] <= 90):
                 raise serializers.ValidationError({
-                    'idempotency_key': 'Ya existe un incidente con esta clave'
+                    'latitude': 'Debe estar entre -90 y 90'
+                })
+        if 'longitude' in data and data['longitude'] is not None:
+            if not (-180 <= data['longitude'] <= 180):
+                raise serializers.ValidationError({
+                    'longitude': 'Debe estar entre -180 y 180'
                 })
         
         return data
     
     def create(self, validated_data):
         """Crea incidente con ubicación y foto inicial"""
-        latitude = validated_data.pop('latitude')
-        longitude = validated_data.pop('longitude')
+        # Remover ubicacion si existe (ya procesada en validate)
+        validated_data.pop('ubicacion', None)
+        
+        latitude = validated_data.pop('latitude', None)
+        longitude = validated_data.pop('longitude', None)
         photo_url = validated_data.pop('photo_url', None)
         
-        # Crear punto geográfico
-        validated_data['location'] = Point(longitude, latitude)
+        # Crear punto geográfico si hay coordenadas
+        if latitude and longitude:
+            validated_data['location'] = Point(longitude, latitude)
         
         # Configurar valores por defecto
-        validated_data['reporter_kind'] = 'ciudadano'
-        validated_data['status'] = 'incidente_pendiente'
+        if 'reporter_kind' not in validated_data:
+            validated_data['reporter_kind'] = 'ciudadano'
+        if 'status' not in validated_data:
+            validated_data['status'] = 'REPORTADA'
+        
+        # Guardar photo_url si existe
+        if photo_url:
+            validated_data['photo_url'] = photo_url
         
         # Obtener reporter_id del usuario actual (si está autenticado)
         request = self.context.get('request')

@@ -48,10 +48,10 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     'apps.authentication',
     'apps.incidents',  # Sistema de incidencias con eventos RabbitMQ
-    # 'apps.reports',
-    # 'apps.tasks',
-    # 'apps.notifications',
-    # 'apps.routes',
+    'apps.routes',  # Sistema de rutas optimizadas con OSRM
+    'apps.tasks',  # Sistema de gestión de tareas de limpieza
+    'apps.notifications',  # Sistema de notificaciones en tiempo real
+    'apps.reports',  # Sistema de reportes y estadísticas
     # 'apps.sync',
     # 'apps.audit',
 ]

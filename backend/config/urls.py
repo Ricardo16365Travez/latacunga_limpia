@@ -22,11 +22,11 @@ urlpatterns = [
     
     # API Endpoints
     path('api/auth/', include('apps.authentication.urls')),
-    path('api/', include('apps.incidents.urls')),  # Incidencias con eventos
-    # path('api/reports/', include('apps.reports.urls')),
-    # path('api/tasks/', include('apps.tasks.urls')),
-    # path('api/routes/', include('apps.routes.urls')),
-    # path('api/notifications/', include('apps.notifications.urls')),
+    path('api/', include('apps.incidents.urls')),  # /api/incidents/
+    path('api/', include('apps.routes.urls')),  # /api/routes/ y /api/zones/
+    path('api/', include('apps.tasks.urls')),  # /api/tasks/
+    path('api/', include('apps.notifications.urls')),  # /api/notifications/
+    path('api/', include('apps.reports.urls')),  # /api/reports/
     # path('api/sync/', include('apps.sync.urls')),
     # path('api/audit/', include('apps.audit.urls')),
 ]

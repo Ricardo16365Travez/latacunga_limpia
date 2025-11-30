@@ -149,6 +149,25 @@ services:
       - residuos_network
     restart: unless-stopped
 
+  # OSRM Backend para cálculo de rutas
+  osrm:
+    image: osrm/osrm-backend:latest
+    container_name: residuos_osrm
+    ports:
+      - "5000:5000"
+    volumes:
+      - osrm_data:/data
+    command: osrm-routed --algorithm mld /data/ecuador-latest.osrm
+    networks:
+      - residuos_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
 networks:
   residuos_network:
     driver: bridge
@@ -158,3 +177,4 @@ volumes:
   redis_data:
   rabbitmq_data:
   media_files:
+  osrm_data:

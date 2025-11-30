@@ -48,14 +48,11 @@ class Incident(models.Model):
     )
     
     # Datos del incidente
-    type = models.CharField(
+    incident_type = models.CharField(
         max_length=30,
         choices=IncidentType.choices,
+        db_column='incident_type',
         help_text='Tipo de incidente reportado'
-    )
-    title = models.CharField(
-        max_length=200,
-        help_text='Título descriptivo del incidente'
     )
     description = models.TextField(
         blank=True,
@@ -83,24 +80,11 @@ class Incident(models.Model):
         help_text='Estado actual del incidente'
     )
     
-    # Información temporal
-    incident_day = models.DateField(
-        default=timezone.now,
-        help_text='Día en que ocurrió el incidente (UTC)'
-    )
-    photos_count = models.IntegerField(
-        default=0,
-        help_text='Número de fotos/evidencias adjuntas'
-    )
-    
-    # Idempotencia para offline-first (app móvil)
-    idempotency_key = models.CharField(
-        max_length=255,
+    # Foto URL simple
+    photo_url = models.TextField(
         blank=True,
         null=True,
-        unique=True,
-        db_index=True,
-        help_text='Clave para prevenir duplicados desde app móvil'
+        help_text='URL de foto del incidente'
     )
     
     # Metadatos
@@ -112,12 +96,6 @@ class Incident(models.Model):
         verbose_name = 'Incidente'
         verbose_name_plural = 'Incidentes'
         ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['status', '-created_at']),
-            models.Index(fields=['type', '-created_at']),
-            models.Index(fields=['reporter_id']),
-            models.Index(fields=['incident_day']),
-        ]
     
     def __str__(self):
         return f"{self.get_type_display()} - {self.title[:50]}"

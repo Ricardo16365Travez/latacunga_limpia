@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { 
   ThemeProvider, 
   createTheme, 
@@ -6,19 +7,22 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Container,
-  Box,
-  Card,
-  CardContent,
-  Grid,
-  Button,
   IconButton,
   Menu,
-  MenuItem
+  MenuItem,
+  Box,
 } from '@mui/material';
-import { AccountCircle, ExitToApp } from '@mui/icons-material';
+import {
+  AccountCircle,
+  ExitToApp,
+} from '@mui/icons-material';
 import Login from './components/Auth/Login';
 import Dashboard from './components/Layout/Dashboard';
+import IncidentsPage from './components/Incidents/IncidentsPage';
+import RoutesPage from './components/Routes/RoutesPage';
+import TasksPage from './components/Tasks/TasksPage';
+import NotificationsPage from './components/Notifications/NotificationsPage';
+import ReportsPage from './components/Reports/ReportsPage';
 
 const theme = createTheme({
   palette: {
@@ -86,52 +90,55 @@ function App() {
       </ThemeProvider>
     );
   }
+  
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Box sx={{ flexGrow: 1 }}>
-        <AppBar position="static">
-          <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              🗂️ Gestión de Residuos Latacunga
-            </Typography>
-            <Typography variant="body2" sx={{ mr: 2 }}>
-              {user.first_name} {user.last_name} ({user.role})
-            </Typography>
-            <IconButton
-              size="large"
-              edge="end"
-              color="inherit"
-              onClick={handleMenuClick}
-            >
-              <AccountCircle />
-            </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorEl}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-            >
-              <MenuItem onClick={handleLogout}>
-                <ExitToApp sx={{ mr: 1 }} />
-                Cerrar Sesión
-              </MenuItem>
-            </Menu>
-          </Toolbar>
-        </AppBar>
-        
-        <Dashboard userRole={user.role} />
-      </Box>
-    </ThemeProvider>
+    <Router>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ flexGrow: 1 }}>
+          <AppBar position="static">
+            <Toolbar>
+              <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                🗂️ Gestión de Residuos Latacunga
+              </Typography>
+              <Typography variant="body2" sx={{ mr: 2 }}>
+                {user.first_name} {user.last_name} ({user.role})
+              </Typography>
+              <IconButton
+                size="large"
+                edge="end"
+                color="inherit"
+                onClick={handleMenuClick}
+              >
+                <AccountCircle />
+              </IconButton>
+              <Menu
+                id="menu-appbar"
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+              >
+                <MenuItem onClick={handleLogout}>
+                  <ExitToApp sx={{ mr: 1 }} />
+                  Cerrar Sesión
+                </MenuItem>
+              </Menu>
+            </Toolbar>
+          </AppBar>
+          
+          <Dashboard userRole={user.role} />
+        </Box>
+      </ThemeProvider>
+    </Router>
   );
 }
 

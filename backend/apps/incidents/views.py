@@ -35,14 +35,14 @@ class IncidentViewSet(viewsets.ModelViewSet):
     - POST   /api/v1/incidents/{id}/attachments/ - Agregar foto/evidencia
     """
     
-    queryset = Incident.objects.select_related().prefetch_related('attachments', 'events')
+    queryset = Incident.objects.all()
     serializer_class = IncidentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['type', 'status', 'reporter_kind']
-    search_fields = ['title', 'description', 'address']
-    ordering_fields = ['created_at', 'incident_day', 'status']
+    filterset_fields = ['incident_type', 'status', 'reporter_kind']
+    search_fields = ['description', 'address']
+    ordering_fields = ['created_at', 'status']
     ordering = ['-created_at']
     
     def get_serializer_class(self):
