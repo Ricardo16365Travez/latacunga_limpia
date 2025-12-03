@@ -98,7 +98,11 @@ class Incident(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.get_type_display()} - {self.title[:50]}"
+        # Mostrar tipo y un fragmento de la descripción o la dirección
+        tipo = getattr(self, 'incident_type', '')
+        tipo_display = self.get_incident_type_display() if tipo else ''
+        preview = (self.description or self.address or '')[:50]
+        return f"{tipo_display} - {preview}"
     
     @property
     def latitude(self):
@@ -113,14 +117,13 @@ class Incident(models.Model):
     def to_event_payload(self):
         """
         Convierte el incidente a payload para eventos RabbitMQ.
-        Compatible con el formato del incident-service de Go.
+        Incluye los campos disponibles del modelo actual.
         """
         return {
             'incident_id': str(self.id),
             'reporter_kind': self.reporter_kind,
             'reporter_id': str(self.reporter_id) if self.reporter_id else None,
-            'type': self.type,
-            'title': self.title,
+            'incident_type': self.incident_type,
             'description': self.description,
             'location': {
                 'latitude': self.latitude,
@@ -128,8 +131,7 @@ class Incident(models.Model):
             },
             'address': self.address,
             'status': self.status,
-            'incident_day': self.incident_day.isoformat() if self.incident_day else None,
-            'photos_count': self.photos_count,
+            'photo_url': self.photo_url,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -167,7 +169,8 @@ class IncidentAttachment(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Adjunto {self.id} - {self.incident.title[:30]}"
+        preview = (self.incident.description or self.incident.address or '')[:30]
+        return f"Adjunto {self.id} - {preview}"
 
 
 class IncidentEvent(models.Model):
@@ -200,7 +203,8 @@ class IncidentEvent(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.event_type} - {self.incident.title[:30]}"
+        preview = (self.incident.description or self.incident.address or '')[:30]
+        return f"{self.event_type} - {preview}"
 
 
 class OutboxEvent(models.Model):
