@@ -65,8 +65,55 @@ class TaskAssignmentHistorySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'timestamp']
 
 
+class TaskListSerializer(serializers.ModelSerializer):
+    """Serializer simple para listas de tareas (NO GeoJSON)."""
+    assigned_to_name = serializers.CharField(
+        source='assigned_to.get_full_name',
+        read_only=True
+    )
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    priority_display = serializers.CharField(source='get_priority_display', read_only=True)
+    
+    # Alias en español para frontend
+    titulo = serializers.CharField(source='title', read_only=True)
+    descripcion = serializers.CharField(source='description', read_only=True)
+    estado = serializers.CharField(source='status', read_only=True)
+    prioridad = serializers.IntegerField(source='priority', read_only=True)
+    asignado_a = serializers.SerializerMethodField()
+    ruta = serializers.SerializerMethodField()
+    fecha_limite = serializers.DateField(source='scheduled_date', read_only=True)
+    progreso = serializers.IntegerField(source='completion_percentage', read_only=True)
+
+    class Meta:
+        model = Task
+        fields = [
+            'id', 'task_id', 'titulo', 'descripcion', 'estado', 'prioridad',
+            'status_display', 'priority_display', 'assigned_to', 'assigned_to_name',
+            'asignado_a', 'ruta', 'fecha_limite', 'progreso', 'title', 'status', 'priority',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'task_id', 'created_at', 'updated_at']
+
+    def get_asignado_a(self, obj):
+        if obj.assigned_to:
+            return {
+                'id': str(obj.assigned_to.id),
+                'display_name': obj.assigned_to.get_full_name(),
+                'email': obj.assigned_to.email
+            }
+        return None
+
+    def get_ruta(self, obj):
+        if obj.route:
+            return {
+                'id': obj.route.id,
+                'nombre': obj.route.name if hasattr(obj.route, 'name') else obj.route.title
+            }
+        return None
+
+
 class TaskSerializer(GeoFeatureModelSerializer):
-    """Serializer para tareas con soporte GeoJSON."""
+    """Serializer para tareas con soporte GeoJSON (detalles)."""
     assigned_to_name = serializers.CharField(
         source='assigned_to.get_full_name',
         read_only=True

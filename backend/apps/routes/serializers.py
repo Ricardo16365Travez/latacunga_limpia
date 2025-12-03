@@ -3,6 +3,19 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from .models import CleaningZone, Route, RouteWaypoint
 
 
+class CleaningZoneListSerializer(serializers.ModelSerializer):
+    """Serializer simple para listas de zonas (NO GeoJSON)."""
+    
+    class Meta:
+        model = CleaningZone
+        fields = [
+            'id', 'zone_name', 'description', 'priority',
+            'frequency', 'estimated_duration_minutes', 'assigned_team_size',
+            'status', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
 class CleaningZoneSerializer(GeoFeatureModelSerializer):
     """Serializer para zonas de limpieza con geometría"""
     # Alias en español
@@ -42,8 +55,40 @@ class RouteWaypointSerializer(serializers.ModelSerializer):
         return obj.location.x if obj.location else None
 
 
+class RouteListSerializer(serializers.ModelSerializer):
+    """Serializer simple para listas de rutas (NO GeoJSON)."""
+    zone_name = serializers.CharField(source='zone.zone_name', read_only=True)
+    
+    # Campos en español para compatibilidad con frontend
+    nombre = serializers.CharField(source='route_name', read_only=True)
+    descripcion = serializers.SerializerMethodField()
+    tipo_ruta = serializers.SerializerMethodField()
+    estado = serializers.CharField(source='status', read_only=True)
+    distancia_km = serializers.DecimalField(source='total_distance_km', max_digits=10, decimal_places=3, read_only=True)
+    duracion_estimada = serializers.IntegerField(source='estimated_duration_minutes', read_only=True)
+    
+    class Meta:
+        model = Route
+        fields = [
+            'id', 'route_name', 'zone', 'zone_name',
+            'total_distance_km', 'estimated_duration_minutes',
+            'optimization_algorithm', 'status',
+            'created_at', 'updated_at',
+            # Campos en español
+            'nombre', 'descripcion', 'tipo_ruta', 'estado',
+            'distancia_km', 'duracion_estimada'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_descripcion(self, obj):
+        return getattr(obj, 'description', '') or ''
+
+    def get_tipo_ruta(self, obj):
+        return 'RESIDENCIAL'
+
+
 class RouteSerializer(GeoFeatureModelSerializer):
-    """Serializer para rutas con geometría"""
+    """Serializer para rutas con geometría (detalles)."""
     
     zone_name = serializers.CharField(source='zone.zone_name', read_only=True)
     route_waypoints = RouteWaypointSerializer(many=True, read_only=True)

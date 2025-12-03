@@ -49,8 +49,8 @@ if ($LASTEXITCODE -eq 0) {
 
 # [4/4] Esperar
 Write-Host ""
-Write-Host "[4/4] Esperando que servicios estén listos (10 segundos)..." -ForegroundColor Yellow
-Start-Sleep -Seconds 10
+Write-Host "[4/4] Esperando que servicios estén listos (20 segundos)..." -ForegroundColor Yellow
+Start-Sleep -Seconds 20
 
 # Pruebas de endpoints
 Write-Host ""

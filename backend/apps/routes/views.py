@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from django.contrib.gis.geos import Point, LineString
 from .models import CleaningZone, Route, RouteWaypoint
 from .serializers import (
-    CleaningZoneSerializer, RouteSerializer, RouteWaypointSerializer,
+    CleaningZoneSerializer, CleaningZoneListSerializer, RouteSerializer, RouteWaypointSerializer,
     CalculateRouteRequestSerializer, CreateRouteRequestSerializer,
-    NearestRoadRequestSerializer
+    NearestRoadRequestSerializer, RouteListSerializer
 )
 from .osrm_service import osrm_service
 import logging
@@ -19,6 +19,11 @@ class CleaningZoneViewSet(viewsets.ModelViewSet):
     queryset = CleaningZone.objects.all()
     serializer_class = CleaningZoneSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return CleaningZoneListSerializer
+        return CleaningZoneSerializer
     
     @action(detail=False, methods=['get'])
     def active(self, request):
@@ -41,6 +46,11 @@ class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
     serializer_class = RouteSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return RouteListSerializer
+        return RouteSerializer
     
     @action(detail=False, methods=['post'])
     def calculate(self, request):

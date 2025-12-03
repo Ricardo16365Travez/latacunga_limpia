@@ -42,14 +42,27 @@ class ReportViewSet(viewsets.ModelViewSet):
                 count = incidents.filter(incident_type=type_value).count()
                 incidents_by_type[choice[1]] = count
             
-            # Contar tareas
+            # Contar tareas: intentar primero usando 'status'; si falla (columna faltante), usar 'state'
             tasks = Task.objects.all()
-            tasks_completed = tasks.filter(status='completed').count()
-            tasks_pending = tasks.filter(status='pending').count()
+            try:
+                tasks_completed = tasks.filter(status='completed').count()
+                tasks_pending = tasks.filter(status='pending').count()
+            except Exception:
+                try:
+                    tasks_completed = tasks.filter(state='completed').count()
+                    tasks_pending = tasks.filter(state='pending').count()
+                except Exception:
+                    tasks_completed = 0
+                    tasks_pending = 0
             
-            # Contar rutas
+            # Contar rutas (proteger si el modelo Route no tiene campo 'status')
             routes = Route.objects.all()
-            routes_active = routes.filter(status='active').count() if hasattr(Route, '_meta').get_field('status') else 0
+            try:
+                # Intentar acceder al campo 'status' y contarlo
+                Route._meta.get_field('status')
+                routes_active = routes.filter(status='active').count()
+            except Exception:
+                routes_active = 0
             
             stats = {
                 'total_incidencias': incidents.count(),
