@@ -5,6 +5,9 @@ from .models import CleaningZone, Route, RouteWaypoint
 
 class CleaningZoneSerializer(GeoFeatureModelSerializer):
     """Serializer para zonas de limpieza con geometría"""
+    # Alias en español
+    nombre = serializers.CharField(source='zone_name', read_only=True)
+    tipo = serializers.CharField(source='frequency', read_only=True)
     
     class Meta:
         model = CleaningZone
@@ -12,7 +15,9 @@ class CleaningZoneSerializer(GeoFeatureModelSerializer):
         fields = [
             'id', 'zone_name', 'description', 'zone_polygon', 'priority',
             'frequency', 'estimated_duration_minutes', 'assigned_team_size',
-            'status', 'created_at', 'updated_at'
+            'status', 'created_at', 'updated_at',
+            # Spanish aliases
+            'nombre', 'tipo'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -42,6 +47,15 @@ class RouteSerializer(GeoFeatureModelSerializer):
     
     zone_name = serializers.CharField(source='zone.zone_name', read_only=True)
     route_waypoints = RouteWaypointSerializer(many=True, read_only=True)
+    # Campos en español para compatibilidad con frontend
+    nombre = serializers.CharField(source='route_name', read_only=True)
+    descripcion = serializers.SerializerMethodField()
+    tipo_ruta = serializers.SerializerMethodField()
+    puntos_ruta = serializers.SerializerMethodField()
+    distancia_km = serializers.DecimalField(source='total_distance_km', max_digits=10, decimal_places=3, read_only=True)
+    duracion_estimada = serializers.IntegerField(source='estimated_duration_minutes', read_only=True)
+    hora_inicio = serializers.SerializerMethodField()
+    hora_fin = serializers.SerializerMethodField()
     
     class Meta:
         model = Route
@@ -50,9 +64,38 @@ class RouteSerializer(GeoFeatureModelSerializer):
             'id', 'route_name', 'zone', 'zone_name', 'route_geometry',
             'waypoints', 'total_distance_km', 'estimated_duration_minutes',
             'optimization_algorithm', 'status', 'route_waypoints',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at',
+            # Campos en español
+            'nombre', 'descripcion', 'tipo_ruta', 'puntos_ruta',
+            'distancia_km', 'duracion_estimada', 'hora_inicio', 'hora_fin'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_descripcion(self, obj):
+        # No hay campo description en Route; devolver una descripción derivada o vacía
+        return getattr(obj, 'description', '') or ''
+
+    def get_tipo_ruta(self, obj):
+        # Placeholder: puede mapearse según propiedades de la ruta/zone
+        return 'RESIDENCIAL'
+
+    def get_puntos_ruta(self, obj):
+        if obj.route_geometry:
+            geom = obj.route_geometry
+            # route_geometry es LineString: extraer coordenadas (x,y)
+            coords = [[pt.x, pt.y] for pt in geom.coords]
+            return {
+                'type': 'LineString',
+                'coordinates': coords
+            }
+        # fallback al campo waypoints si existe
+        return obj.waypoints if obj.waypoints else None
+
+    def get_hora_inicio(self, obj):
+        return None
+
+    def get_hora_fin(self, obj):
+        return None
 
 
 class CalculateRouteRequestSerializer(serializers.Serializer):
