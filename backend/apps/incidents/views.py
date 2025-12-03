@@ -172,9 +172,8 @@ class IncidentViewSet(viewsets.ModelViewSet):
         
         attachment = serializer.save(incident=incident)
         
-        # Actualizar contador de fotos
-        incident.photos_count = incident.attachments.count()
-        incident.save()
+        # Nota: no se usa campo photos_count en el modelo actual;
+        # el número de adjuntos puede consultarse con incident.attachments.count()
         
         # Publicar evento
         event_service = get_incident_event_service()
@@ -231,7 +230,7 @@ class IncidentViewSet(viewsets.ModelViewSet):
                 Incident.objects.values('status').annotate(count=Count('id')).values_list('status', 'count')
             ),
             'by_type': dict(
-                Incident.objects.values('type').annotate(count=Count('id')).values_list('type', 'count')
+                Incident.objects.values('incident_type').annotate(count=Count('id')).values_list('incident_type', 'count')
             ),
             'pending_validation': Incident.objects.filter(
                 status__in=['incidente_pendiente', 'incidente_no_validado']
