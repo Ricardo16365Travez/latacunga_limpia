@@ -51,6 +51,7 @@ class RouteSerializer(GeoFeatureModelSerializer):
     nombre = serializers.CharField(source='route_name', read_only=True)
     descripcion = serializers.SerializerMethodField()
     tipo_ruta = serializers.SerializerMethodField()
+    estado = serializers.CharField(source='status', read_only=True)
     puntos_ruta = serializers.SerializerMethodField()
     distancia_km = serializers.DecimalField(source='total_distance_km', max_digits=10, decimal_places=3, read_only=True)
     duracion_estimada = serializers.IntegerField(source='estimated_duration_minutes', read_only=True)
@@ -66,7 +67,7 @@ class RouteSerializer(GeoFeatureModelSerializer):
             'optimization_algorithm', 'status', 'route_waypoints',
             'created_at', 'updated_at',
             # Campos en español
-            'nombre', 'descripcion', 'tipo_ruta', 'puntos_ruta',
+            'nombre', 'descripcion', 'tipo_ruta', 'estado', 'puntos_ruta',
             'distancia_km', 'duracion_estimada', 'hora_inicio', 'hora_fin'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
