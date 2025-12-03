@@ -1,7 +1,6 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.contrib.gis.geos import Point, LineString
 from .models import CleaningZone, Route, RouteWaypoint
 from .serializers import (
@@ -19,7 +18,7 @@ class CleaningZoneViewSet(viewsets.ModelViewSet):
     """ViewSet para zonas de limpieza"""
     queryset = CleaningZone.objects.all()
     serializer_class = CleaningZoneSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
     @action(detail=False, methods=['get'])
     def active(self, request):
@@ -41,7 +40,7 @@ class RouteViewSet(viewsets.ModelViewSet):
     """ViewSet para rutas optimizadas"""
     queryset = Route.objects.all()
     serializer_class = RouteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
     @action(detail=False, methods=['post'])
     def calculate(self, request):

@@ -1,7 +1,6 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q, Count, Avg, Sum
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -39,7 +38,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.select_related(
         'route', 'incident', 'assigned_to', 'created_by'
     ).prefetch_related('checkpoints', 'history')
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['status', 'priority', 'assigned_to', 'scheduled_date']
     search_fields = ['task_id', 'title', 'description', 'address']

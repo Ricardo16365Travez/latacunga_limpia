@@ -1,7 +1,6 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Count, Q
 from .models import Report, Statistics
@@ -15,7 +14,7 @@ class ReportViewSet(viewsets.ModelViewSet):
     """ViewSet para gestión de reportes."""
     queryset = Report.objects.all()
     serializer_class = ReportSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
         import uuid
@@ -76,4 +75,4 @@ class StatisticsViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet de solo lectura para estadísticas."""
     queryset = Statistics.objects.all()
     serializer_class = StatisticsSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]

@@ -1,7 +1,6 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from .models import Notification, DeviceToken, NotificationPreference
@@ -15,7 +14,7 @@ from .serializers import (
 class NotificationViewSet(viewsets.ModelViewSet):
     """ViewSet para gestión de notificaciones."""
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['notification_type', 'is_read', 'priority']
     ordering = ['-created_at']
