@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_ENDPOINTS from '../../config/api';
 import {
   Box,
   Card,
@@ -84,7 +85,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8000/api/auth/login/', {
+      const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,7 +93,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         body: JSON.stringify(loginForm),
       });
 
-      const data = await response.json();
+      const text = await response.text();
+      let data: any = {};
+      try { data = text ? JSON.parse(text) : {}; } catch (e) { /* respuesta no JSON */ }
 
       if (response.ok) {
         localStorage.setItem('access_token', data.access);
@@ -100,9 +103,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         localStorage.setItem('user', JSON.stringify(data.user));
         onLoginSuccess(data.user, { access: data.access, refresh: data.refresh });
       } else {
-        setError(data.message || 'Error de autenticación');
+        const msg = data.detail || data.message || text || `Error ${response.status}`;
+        console.error('Login error:', { status: response.status, body: text });
+        setError(msg);
       }
     } catch (err) {
+      console.error('Login network error:', err);
       setError('Error de conexión. Verifica que el backend esté ejecutándose.');
     } finally {
       setLoading(false);
@@ -121,7 +127,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/auth/register/', {
+      const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,7 +159,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8000/api/auth/otp/request/', {
+      const response = await fetch(API_ENDPOINTS.AUTH.OTP_REQUEST, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +196,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8000/api/auth/otp/verify/', {
+      const response = await fetch(API_ENDPOINTS.AUTH.OTP_VERIFY, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
