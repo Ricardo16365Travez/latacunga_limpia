@@ -31,13 +31,26 @@ El archivo `frontend/src/components/Auth/Login.tsx` contenía una mezcla de dos 
 
 Esto generaba errores de sintaxis (propiedades/firma esperada) y referencias a símbolos inexistentes.
 
-## Corrección aplicada
-- Se depuró `Login.tsx` dejando únicamente el componente de login simple y su `export default` original (`LoginComponent`).
-- Se eliminaron bloques duplicados e incoherentes (OTP/Registro) que requerían imports/estados no definidos en el archivo.
-- **Error de runtime adicional**: La firma del componente `LoginComponent({ onLoginSuccess }: LoginProps)` fallaba cuando se invocaba sin props (línea 23). Solución: agregar valor por defecto `= {}` para que React pueda desestructurar props vacías sin error.
+## Correcciones aplicadas y validadas localmente
 
-Archivo modificado:
-- `frontend/src/components/Auth/Login.tsx` (commit 40a3673 build fix, commit cd00424 runtime fix)
+### 1. Build (Compilación) – Login.tsx
+- Se depuró `Login.tsx` eliminando bloque duplicado (OTP/Registro/Tabs).
+- Se corrigieron props undefined agregando valor por defecto `= {}`.
+
+### 2. Runtime – REACT_APP_API_URL
+- **Problema**: `REACT_APP_API_URL` definida en stage 2 del Dockerfile (después del build). En React, las env vars solo están disponibles en tiempo de **build**, no runtime.
+- **Solución**: Mover `REACT_APP_API_URL` a stage 1 (build) usando `ARG REACT_APP_API_URL` y `ENV REACT_APP_API_URL=${REACT_APP_API_URL}`.
+- **Validación local**: Build Docker exitoso, contenedor ejecutándose, app respondiendo HTTP 200 con HTML correcta en `http://localhost:3003`.
+
+## Estado actual
+- ✅ Build compila sin errores (solo warnings de ESLint menores).
+- ✅ Docker construye y sirve frontend correctamente.
+- ✅ App React inicializa sin crashes de runtime.
+- ✅ Commits pusheados a AndreaDu2001/Tesis- y Ricardo16365Travez/latacunga_limpia.
+
+Archivos modificados:
+- `frontend/src/components/Auth/Login.tsx` (commit cd00424 + e92c614)
+- `Dockerfile` (commit 9144f53)
 
 ## Pasos siguientes sugeridos
 1. Reconstruir localmente el frontend:
