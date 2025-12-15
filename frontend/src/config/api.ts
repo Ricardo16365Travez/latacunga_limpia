@@ -1,7 +1,7 @@
 // Configuración de la API (FastAPI externo de Andrea)
 // Variable de entorno REACT_APP_API_URL debe contener la URL base (sin /api)
-// Ejemplo: https://epagal-backend-latacunga.onrender.com
-const baseURL = process.env.REACT_APP_API_URL || 'https://epagal-backend-latacunga.onrender.com';
+// Ejemplo: https://tesis-c5yj.onrender.com
+const baseURL = process.env.REACT_APP_API_URL || 'https://tesis-c5yj.onrender.com';
 export const API_BASE_URL = baseURL.endsWith('/api') ? baseURL : `${baseURL}/api`;
 
 export const API_ENDPOINTS = {

@@ -15,10 +15,12 @@ import {
 import {
   AccountCircle,
   ExitToApp,
+  Menu as MenuIcon,
 } from '@mui/icons-material';
 import Login from './components/Auth/Login';
 import { API_ENDPOINTS } from './config/api';
 import Dashboard from './components/Layout/Dashboard';
+import Sidebar from './components/Layout/Sidebar';
 import IncidentsPage from './components/Incidents/IncidentsPage';
 import RoutesPage from './components/Routes/RoutesPage';
 import MisRutas from './components/Routes/MisRutas';
@@ -51,6 +53,11 @@ interface User {
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   useEffect(() => {
     // Verificar si hay un usuario logueado al cargar la app
@@ -121,9 +128,23 @@ function App() {
         {!user ? (
           <Login onLoginSuccess={handleLoginSuccess} />
         ) : (
-          <Box sx={{ flexGrow: 1 }}>
-            <AppBar position="static">
+          <Box sx={{ display: 'flex' }}>
+            <AppBar
+              position="fixed"
+              sx={{
+                width: { sm: `calc(100% - 240px)` },
+                ml: { sm: `240px` },
+              }}
+            >
               <Toolbar>
+                <IconButton
+                  color="inherit"
+                  edge="start"
+                  onClick={handleDrawerToggle}
+                  sx={{ mr: 2, display: { sm: 'none' } }}
+                >
+                  <MenuIcon />
+                </IconButton>
                 <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                   🗂️ Gestión de Residuos Latacunga
                 </Typography>
@@ -161,16 +182,29 @@ function App() {
               </Toolbar>
             </AppBar>
             
-            <Routes>
-              <Route path="/dashboard" element={<Dashboard userRole={user?.role || 'conductor'} />} />
-              <Route path="/rutas" element={<MisRutas />} />
-              <Route path="/rutas/:rutaId" element={<RutaDetalle />} />
-              <Route path="/incidents" element={<IncidentsPage />} />
-              <Route path="/tasks" element={<TasksPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/" element={<Navigate to="/rutas" replace />} />
-            </Routes>
+            <Sidebar mobileOpen={mobileOpen} onDrawerToggle={handleDrawerToggle} />
+            
+            <Box
+              component="main"
+              sx={{
+                flexGrow: 1,
+                p: 3,
+                width: { sm: `calc(100% - 240px)` },
+                mt: 8,
+              }}
+            >
+              <Routes>
+                <Route path="/dashboard" element={<Dashboard userRole={user?.role || 'conductor'} />} />
+                <Route path="/rutas" element={<MisRutas />} />
+                <Route path="/rutas/:rutaId" element={<RutaDetalle />} />
+                <Route path="/routes" element={<RoutesPage />} />
+                <Route path="/incidents" element={<IncidentsPage />} />
+                <Route path="/tasks" element={<TasksPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </Box>
           </Box>
         )}
 

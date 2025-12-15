@@ -16,7 +16,7 @@ RUN npm install --prefer-offline --no-audit 2>&1 | tail -5
 COPY frontend ./
 
 # Variables de entorno para build (CRÍTICO: deben estar en stage 1)
-ARG REACT_APP_API_URL=https://epagal-backend-latacunga.onrender.com
+ARG REACT_APP_API_URL=https://tesis-c5yj.onrender.com
 ENV REACT_APP_API_URL=${REACT_APP_API_URL}
 ENV NODE_ENV=production
 ENV CI=false

@@ -11,6 +11,6 @@ services:
       - port: 3000
     envVars:
       - key: REACT_APP_API_URL
-        value: "https://epagal-backend-latacunga.onrender.com"
+        value: "https://tesis-c5yj.onrender.com"
       - key: NODE_ENV
         value: "production"

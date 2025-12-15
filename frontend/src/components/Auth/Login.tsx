@@ -71,13 +71,9 @@ export default function LoginComponent(props: LoginProps = {}) {
         <Card sx={{ mb: 3, bgcolor: '#e3f2fd' }}>
           <CardContent>
             <Typography variant="body2">
-              <strong>Operadores de prueba:</strong>
+              <strong>Credenciales de prueba:</strong>
               <br />
-              👤 operador1 / operador123
-              <br />
-              👤 operador2 / operador123
-              <br />
-              👤 operador3 / operador123
+              🔐 admin / admin123
             </Typography>
           </CardContent>
         </Card>
@@ -120,7 +116,7 @@ export default function LoginComponent(props: LoginProps = {}) {
         </form>
 
         <Typography variant="caption" color="textSecondary" sx={{ mt: 3, display: 'block', textAlign: 'center' }}>
-          Conectando a: {process.env.REACT_APP_API_URL || 'https://epagal-backend-routing-latest.onrender.com/api'}
+          Conectando a: {process.env.REACT_APP_API_URL || 'https://tesis-c5yj.onrender.com'}
         </Typography>
       </Paper>
     </Container>
