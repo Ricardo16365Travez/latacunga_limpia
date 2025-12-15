@@ -34,9 +34,10 @@ Esto generaba errores de sintaxis (propiedades/firma esperada) y referencias a s
 ## Corrección aplicada
 - Se depuró `Login.tsx` dejando únicamente el componente de login simple y su `export default` original (`LoginComponent`).
 - Se eliminaron bloques duplicados e incoherentes (OTP/Registro) que requerían imports/estados no definidos en el archivo.
+- **Error de runtime adicional**: La firma del componente `LoginComponent({ onLoginSuccess }: LoginProps)` fallaba cuando se invocaba sin props (línea 23). Solución: agregar valor por defecto `= {}` para que React pueda desestructurar props vacías sin error.
 
 Archivo modificado:
-- `frontend/src/components/Auth/Login.tsx`
+- `frontend/src/components/Auth/Login.tsx` (commit 40a3673 build fix, commit cd00424 runtime fix)
 
 ## Pasos siguientes sugeridos
 1. Reconstruir localmente el frontend:
