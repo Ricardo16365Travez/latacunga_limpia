@@ -1,18 +1,4 @@
-# Multi-stage build: Frontend + Backend
-# Stage 1: Build frontend
-FROM node:18-alpine AS frontend-builder
-
-WORKDIR /app/frontend
-
-COPY frontend/package.json frontend/package-lock.json ./
-
-RUN npm ci
-
-COPY frontend ./
-
-RUN npm run build
-
-# Stage 2: Backend
+# Dockerfile para desplegar Backend en Render
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -23,16 +9,13 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Copy requirements and install Python dependencies
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend code
+# Copy application code
 COPY backend ./backend
 COPY database ./database
-
-# Copy built frontend to backend static files
-COPY --from=frontend-builder /app/frontend/build ./backend/staticfiles/
 
 # Create necessary directories
 RUN mkdir -p /app/backend/logs /app/backend/media
@@ -45,4 +28,4 @@ ENV PORT=8000
 EXPOSE 8000
 
 # Run migrations and start server
-CMD ["sh", "-c", "cd /app/backend && python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT} --workers 4 --timeout 60"]
+CMD ["sh", "-c", "cd /app/backend && python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT} --workers 4 --timeout 60 --access-logfile - --error-logfile -"]
