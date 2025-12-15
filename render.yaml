@@ -5,7 +5,6 @@ services:
     plan: free
     dockerfile: ./Dockerfile
     dockerContext: ./
-    startCommand: bash backend/entrypoint.sh
     healthCheckPath: /health/
     healthCheckStartupTimeout: 300
     envVars:

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import API_ENDPOINTS from '../../config/api';
+import { useNavigate } from 'react-router-dom';
+import api from '../../services/apiService';
+import { API_ENDPOINTS } from '../../config/api';
 import {
   Box,
   Card,
@@ -7,113 +9,125 @@ import {
   TextField,
   Button,
   Typography,
-  Tabs,
-  Tab,
   Alert,
   CircularProgress,
-  InputAdornment,
-  IconButton,
+  Container,
+  Paper,
 } from '@mui/material';
-import {
-  Visibility,
-  VisibilityOff,
-  Email,
-  Phone,
-  Lock,
-  Login as LoginIcon,
-  PersonAdd,
-  Message
-} from '@mui/icons-material';
 
 interface LoginProps {
   onLoginSuccess: (user: any, tokens: any) => void;
+
+interface LoginProps {
+  onLoginSuccess?: (user: any, tokens: any) => void;
 }
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel({ children, value, index, ...other }: TabPanelProps) {
-  return (
-    <div role="tabpanel" hidden={value !== index} {...other}>
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
-const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
-  const [tabValue, setTabValue] = useState(0);
-  const [showPassword, setShowPassword] = useState(false);
+export default function LoginComponent({ onLoginSuccess }: LoginProps) {
+  const navigate = useNavigate();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
-  // Estados para login tradicional
-  const [loginForm, setLoginForm] = useState({
-    identifier: '',
-    password: ''
-  });
-
-  // Estados para OTP
-  const [otpForm, setOtpForm] = useState({
-    phone: '',
-    code: '',
-    step: 'phone' // 'phone' | 'code'
-  });
-
-  // Estados para registro
-  const [registerForm, setRegisterForm] = useState({
-    email: '',
-    phone: '',
-    password: '',
-    password_confirm: '',
-    first_name: '',
-    last_name: ''
-  });
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-    setError('');
-    setSuccess('');
-  };
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
     try {
-      const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginForm),
+      setLoading(true);
+      setError(null);
+
+      const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, {
+        username,
+        password,
       });
 
-      const text = await response.text();
-      let data: any = {};
-      try { data = text ? JSON.parse(text) : {}; } catch (e) { /* respuesta no JSON */ }
+      const { access_token } = response.data;
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('user', username);
 
-      if (response.ok) {
-        localStorage.setItem('access_token', data.access);
-        localStorage.setItem('refresh_token', data.refresh);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        onLoginSuccess(data.user, { access: data.access, refresh: data.refresh });
-      } else {
-        const msg = data.detail || data.message || text || `Error ${response.status}`;
-        console.error('Login error:', { status: response.status, body: text });
-        setError(msg);
+      if (onLoginSuccess) {
+        onLoginSuccess({ username }, { access_token });
       }
-    } catch (err) {
-      console.error('Login network error:', err);
-      setError('Error de conexión. Verifica que el backend esté ejecutándose.');
+
+      navigate('/rutas');
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Error al iniciar sesión');
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  return (
+    <Container maxWidth="sm" sx={{ py: 8 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2 }}>
+            🗑️ EPAGAL Latacunga
+          </Typography>
+          <Typography variant="body1" color="textSecondary">
+            Sistema de Gestión de Rutas y Residuos
+          </Typography>
+        </Box>
+
+        <Card sx={{ mb: 3, bgcolor: '#e3f2fd' }}>
+          <CardContent>
+            <Typography variant="body2">
+              <strong>Operadores de prueba:</strong>
+              <br />
+              👤 operador1 / operador123
+              <br />
+              👤 operador2 / operador123
+              <br />
+              👤 operador3 / operador123
+            </Typography>
+          </CardContent>
+        </Card>
+
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+        <form onSubmit={handleLogin}>
+          <TextField
+            fullWidth
+            label="Usuario"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            margin="normal"
+            disabled={loading}
+            autoFocus
+          />
+
+          <TextField
+            fullWidth
+            label="Contraseña"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            margin="normal"
+            disabled={loading}
+          />
+
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            size="large"
+            sx={{ mt: 3 }}
+            type="submit"
+            disabled={loading || !username || !password}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Iniciar Sesión'}
+          </Button>
+        </form>
+
+        <Typography variant="caption" color="textSecondary" sx={{ mt: 3, display: 'block', textAlign: 'center' }}>
+          Conectando a: {process.env.REACT_APP_API_URL || 'https://epagal-backend-routing-latest.onrender.com/api'}
+        </Typography>
+      </Paper>
+    </Container>
+  );
+}
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();

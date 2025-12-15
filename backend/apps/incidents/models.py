@@ -52,6 +52,8 @@ class Incident(models.Model):
         max_length=30,
         choices=IncidentType.choices,
         db_column='incident_type',
+        default=IncidentType.PUNTO_ACOPIO,
+        blank=True,
         help_text='Tipo de incidente reportado'
     )
     description = models.TextField(

@@ -5,6 +5,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
+import os
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -12,6 +14,8 @@ from drf_spectacular.views import (
 )
 
 urlpatterns = [
+    # Redirigir la raíz al frontend (configurable vía variable de entorno FRONTEND_URL)
+    path('', RedirectView.as_view(url=os.environ.get('FRONTEND_URL', 'https://tesis-1-z78t.onrender.com/'), permanent=False)),
     # Admin
     path('admin/', admin.site.urls),
     
