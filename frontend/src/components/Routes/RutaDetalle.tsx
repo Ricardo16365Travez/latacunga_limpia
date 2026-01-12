@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Paper,
@@ -23,7 +23,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import * as routesService from '../../services/routesService';
 import { dibujarRutaRoja } from '../../services/routingMap';
 
 // Fix para ícono de leaflet en React
@@ -44,7 +43,7 @@ interface RutaDetalles {
     duracion_estimada: string;
     costo_total_metros: number;
     fecha_generacion: string;
-  };
+  } | null;
   incidencias: Array<{
     id: number;
     tipo: string;
@@ -74,24 +73,52 @@ export default function RutaDetalle() {
   const [data, setData] = useState<RutaDetalles | null>(null);
   const mapRef = React.useRef<L.Map | null>(null);
 
-  useEffect(() => {
-    cargarDetalles();
-  }, [rutaId]);
-
-  const cargarDetalles = async () => {
+  const cargarDetalles = useCallback(async () => {
     if (!rutaId) return;
     try {
       setLoading(true);
       setError(null);
-      const response = await routesService.obtenerDetallesRuta(Number(rutaId));
-      setData(response);
+      
+      // Llamar al endpoint real del backend para obtener detalles de la ruta
+      const response = await fetch(`https://epagal-backend-routing-latest.onrender.com/api/rutas/${rutaId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const rutaData = await response.json();
+      
+      // Adaptar la respuesta del backend a la estructura esperada
+      setData({
+        ruta: {
+          id: rutaData.id,
+          zona: rutaData.zona,
+          estado: rutaData.estado,
+          suma_gravedad: rutaData.suma_gravedad,
+          camiones_usados: rutaData.camiones_usados,
+          duracion_estimada: rutaData.duracion_estimada || 'N/A',
+          costo_total_metros: rutaData.costo_total_metros || 0,
+          fecha_generacion: rutaData.fecha_generacion,
+        },
+        incidencias: rutaData.incidencias || [],
+        puntos: rutaData.puntos || [],
+      });
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Error al cargar detalles de ruta');
-      console.error('Error:', err);
+      setError(err?.message || 'Error al cargar detalles de ruta');
+      console.error('Error cargando ruta:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [rutaId]);
+
+  useEffect(() => {
+    cargarDetalles();
+  }, [rutaId, cargarDetalles]);
 
   useEffect(() => {
     if (data && mapRef.current && data.puntos.length > 0) {
@@ -108,7 +135,7 @@ export default function RutaDetalle() {
     );
   }
 
-  if (error || !data) {
+  if (error || !data || !data.ruta) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Button
@@ -124,6 +151,8 @@ export default function RutaDetalle() {
     );
   }
 
+  const ruta = data.ruta;
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -134,7 +163,7 @@ export default function RutaDetalle() {
         >
           Volver
         </Button>
-        <Typography variant="h4">🗺️ Ruta #{data.ruta.id} - {data.ruta.zona}</Typography>
+        <Typography variant="h4">🗺️ Ruta #{ruta.id} - {ruta.zona}</Typography>
         <Button
           variant="outlined"
           startIcon={<RefreshIcon />}
@@ -198,14 +227,14 @@ export default function RutaDetalle() {
                 📋 Información de Ruta
               </Typography>
               <Divider sx={{ mb: 1 }} />
-              <Typography variant="body2"><strong>Zona:</strong> {data.ruta.zona}</Typography>
-              <Typography variant="body2"><strong>Estado:</strong> {data.ruta.estado}</Typography>
-              <Typography variant="body2"><strong>Gravedad Total:</strong> {data.ruta.suma_gravedad} pts</Typography>
-              <Typography variant="body2"><strong>Camiones:</strong> {data.ruta.camiones_usados}</Typography>
-              <Typography variant="body2"><strong>Duración:</strong> {data.ruta.duracion_estimada}</Typography>
-              <Typography variant="body2"><strong>Distancia:</strong> {(data.ruta.costo_total_metros / 1000).toFixed(2)} km</Typography>
+              <Typography variant="body2"><strong>Zona:</strong> {ruta.zona}</Typography>
+              <Typography variant="body2"><strong>Estado:</strong> {ruta.estado}</Typography>
+              <Typography variant="body2"><strong>Gravedad Total:</strong> {ruta.suma_gravedad} pts</Typography>
+              <Typography variant="body2"><strong>Camiones:</strong> {ruta.camiones_usados}</Typography>
+              <Typography variant="body2"><strong>Duración:</strong> {ruta.duracion_estimada}</Typography>
+              <Typography variant="body2"><strong>Distancia:</strong> {(ruta.costo_total_metros / 1000).toFixed(2)} km</Typography>
               <Typography variant="caption" color="textSecondary">
-                Generada: {new Date(data.ruta.fecha_generacion).toLocaleString('es-ES')}
+                Generada: {new Date(ruta.fecha_generacion).toLocaleString('es-ES')}
               </Typography>
             </CardContent>
           </Card>

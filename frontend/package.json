@@ -31,14 +31,18 @@
     "yup": "^1.4.0",
     "react-query": "^3.39.3",
     "recharts": "^2.8.0",
-    "date-fns": "^2.30.0"
+    "date-fns": "^2.30.0",
+    "express": "^4.18.2"
   },
   "devDependencies": {
-    "@types/leaflet": "^1.9.8"
+    "@types/leaflet": "^1.9.8",
+    "ajv": "^8.12.0",
+    "ajv-keywords": "^5.1.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "serve": "node server.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

@@ -28,8 +28,7 @@ import {
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import * as conductoresService from '../../services/conductoresService';
-import * as routesService from '../../services/routesService';
+import rutasService from '../../services/rutasService';
 
 interface Ruta {
   id: number;
@@ -37,26 +36,19 @@ interface Ruta {
   estado: string;
   suma_gravedad: number;
   camiones_usados: number;
-  duracion_estimada: string;
-  asignaciones: any[];
-}
-
-interface MisRutasResponse {
-  total: number;
-  asignado: number;
-  iniciado: number;
-  completado: number;
-  rutas: Ruta[];
+  duracion_estimada?: string;
+  asignaciones?: any[];
+  fecha_generacion?: string;
 }
 
 export default function MisRutas() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<MisRutasResponse | null>(null);
-  const [finalizandoRutaId, setFinalizandoRutaId] = useState<number | null>(null);
+  const [rutas, setRutas] = useState<Ruta[]>([]);
   const [notasRuta, setNotasRuta] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [finalizandoRutaId, setFinalizandoRutaId] = useState<number | null>(null);
 
   useEffect(() => {
     cargarRutas();
@@ -66,11 +58,13 @@ export default function MisRutas() {
     try {
       setLoading(true);
       setError(null);
-      const response = await conductoresService.misRutasTodas();
-      setData(response);
+      const response = await rutasService.listarRutas({ limit: 100 });
+      const rutasList = Array.isArray(response) ? response : (response?.results || []);
+      setRutas(rutasList);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Error al cargar rutas');
-      console.error('Error:', err);
+      console.error('Error cargando rutas:', err);
+      setRutas([]);
+      setError('Error al cargar rutas. Verifica la conexión con el backend.');
     } finally {
       setLoading(false);
     }
@@ -78,11 +72,10 @@ export default function MisRutas() {
 
   const handleIniciarRuta = async (rutaId: number) => {
     try {
-      await conductoresService.iniciarRuta(rutaId);
+      await rutasService.actualizarRuta(rutaId, { estado: 'en_ejecucion' });
       await cargarRutas();
-      alert('✅ Ruta iniciada exitosamente');
-    } catch (err: any) {
-      alert('❌ Error al iniciar ruta: ' + (err?.response?.data?.detail || err.message));
+    } catch (err) {
+      setError('Error al iniciar la ruta');
     }
   };
 
@@ -92,21 +85,43 @@ export default function MisRutas() {
   };
 
   const confirmarFinalizarRuta = async () => {
-    if (!finalizandoRutaId) return;
-    try {
-      await conductoresService.finalizarRuta(finalizandoRutaId, notasRuta);
-      await cargarRutas();
-      alert('✅ Ruta finalizada exitosamente');
-      setDialogOpen(false);
-      setNotasRuta('');
-      setFinalizandoRutaId(null);
-    } catch (err: any) {
-      alert('❌ Error al finalizar ruta: ' + (err?.response?.data?.detail || err.message));
+    if (finalizandoRutaId) {
+      try {
+        await rutasService.actualizarRuta(finalizandoRutaId, { estado: 'completada' });
+        await cargarRutas();
+      } catch (err) {
+        setError('Error al finalizar la ruta');
+      }
     }
+    setDialogOpen(false);
+    setNotasRuta('');
+    setFinalizandoRutaId(null);
   };
 
   const handleVerMapa = (rutaId: number) => {
     navigate(`/rutas/${rutaId}`);
+  };
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'planeada':
+        return 'info';
+      case 'en_ejecucion':
+        return 'warning';
+      case 'completada':
+        return 'success';
+      case 'asignada':
+        return 'primary';
+      default:
+        return 'default';
+    }
+  };
+
+  const stats = {
+    total: rutas.length,
+    asignado: rutas.filter((r) => r.estado === 'asignada').length,
+    iniciado: rutas.filter((r) => r.estado === 'en_ejecucion').length,
+    completado: rutas.filter((r) => r.estado === 'completada').length,
   };
 
   if (loading) {
@@ -133,39 +148,37 @@ export default function MisRutas() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {/* Resumen de estados */}
-      {data && (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h6">{data.asignado}</Typography>
-              <Typography variant="body2" color="textSecondary">Asignadas</Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff3e0' }}>
-              <Typography variant="h6">{data.iniciado}</Typography>
-              <Typography variant="body2" color="textSecondary">En progreso</Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e8f5e9' }}>
-              <Typography variant="h6">{data.completado}</Typography>
-              <Typography variant="body2" color="textSecondary">Completadas</Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h6">{data.total}</Typography>
-              <Typography variant="body2" color="textSecondary">Total</Typography>
-            </Paper>
-          </Grid>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper sx={{ p: 2, textAlign: 'center' }}>
+            <Typography variant="h6">{stats.asignado}</Typography>
+            <Typography variant="body2" color="textSecondary">Asignadas</Typography>
+          </Paper>
         </Grid>
-      )}
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff3e0' }}>
+            <Typography variant="h6">{stats.iniciado}</Typography>
+            <Typography variant="body2" color="textSecondary">En progreso</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e8f5e9' }}>
+            <Typography variant="h6">{stats.completado}</Typography>
+            <Typography variant="body2" color="textSecondary">Completadas</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper sx={{ p: 2, textAlign: 'center' }}>
+            <Typography variant="h6">{stats.total}</Typography>
+            <Typography variant="body2" color="textSecondary">Total</Typography>
+          </Paper>
+        </Grid>
+      </Grid>
 
       {/* Lista de rutas */}
-      {data && data.rutas.length > 0 ? (
+      {rutas.length > 0 ? (
         <Grid container spacing={2}>
-          {data.rutas.map((ruta) => (
+          {rutas.map((ruta) => (
             <Grid item xs={12} sm={6} md={4} key={ruta.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardContent sx={{ flexGrow: 1 }}>

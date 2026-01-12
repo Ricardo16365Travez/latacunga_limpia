@@ -27,7 +27,8 @@ import {
   Delete as DeleteIcon,
   MarkEmailRead as ReadIcon,
 } from '@mui/icons-material';
-import api from '../../services/apiService';
+import notificationsService from '../../services/notificacionesService';
+import { toErrorMessage } from '../../services/errorUtils';
 
 interface Notification {
   id: number;
@@ -35,8 +36,8 @@ interface Notification {
   titulo: string;
   mensaje: string;
   leida: boolean;
-  prioridad: string;
-  created_at: string;
+  prioridad?: string;
+  created_at?: string;
   metadata?: any;
 }
 
@@ -65,10 +66,11 @@ const NotificationsPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get('/notifications/');
-      setNotifications(response.data.results || response.data);
+      // Usa baseURL con prefijo /api y estructura del backend FastAPI
+      const data = await notificationsService.listarNotificaciones();
+      setNotifications((data.notificaciones || []) as any);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al cargar notificaciones');
+      setError(toErrorMessage(err) || 'Error al cargar notificaciones');
       console.error('Error loading notifications:', err);
     } finally {
       setLoading(false);
@@ -76,30 +78,17 @@ const NotificationsPage: React.FC = () => {
   };
 
   const handleMarkAsRead = async (id: number) => {
-    try {
-      await api.post(`/notifications/${id}/mark_as_read/`);
-      loadNotifications();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al marcar como leída');
-    }
+    const res = await notificationsService.marcarComoLeida(id);
+    if (!res) setError('Marcar notificaciones no está disponible en el backend actual.');
   };
 
   const handleMarkAllAsRead = async () => {
-    try {
-      await api.post('/notifications/mark_all_as_read/');
-      loadNotifications();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al marcar todas como leídas');
-    }
+    const res = await notificationsService.marcarTodasLeidas();
+    if (!res) setError('Marcar todas como leídas no está disponible en el backend actual.');
   };
 
   const handleDelete = async (id: number) => {
-    try {
-      await api.delete(`/notifications/${id}/`);
-      loadNotifications();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al eliminar notificación');
-    }
+    setError('Eliminar notificaciones no está disponible en el backend actual.');
   };
 
   const getNotificationIcon = (tipo: string) => {
@@ -275,7 +264,7 @@ const NotificationsPage: React.FC = () => {
                               display="block"
                               sx={{ mt: 0.5 }}
                             >
-                              {formatTime(notification.created_at)}
+                              {formatTime(notification.created_at || new Date().toISOString())}
                             </Typography>
                           </>
                         }

@@ -25,13 +25,14 @@ import {
   Refresh as RefreshIcon,
   LocationOn as LocationIcon,
   Delete as DeleteIcon,
-  Edit as EditIcon,
   Warning as WarningIcon,
+  PictureAsPdf as PdfIcon,
 } from '@mui/icons-material';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import api from '../../services/apiService';
+import IncidenciasService from '../../services/incidenciasService';
+import { toErrorMessage } from '../../services/errorUtils';
 
 // Fix para íconos de Leaflet en React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -45,40 +46,35 @@ interface Incident {
   id: number;
   tipo: string;
   descripcion: string;
+  gravedad: number;
   estado: string;
-  prioridad: string;
-  ubicacion: {
-    type: string;
-    coordinates: [number, number];
-  };
-  direccion: string;
-  reportado_por?: {
-    email: string;
-    display_name: string;
-  };
-  created_at: string;
-  updated_at: string;
+  lat?: number;
+  lon?: number;
+  zona: string;
+  usuario_id?: number;
+  reportado_en?: string;
+  created_at?: string;
+  direccion?: string; // Dirección obtenida por geocodificación reversa
 }
 
 const INCIDENT_TYPES = [
-  { value: 'ACUMULACION', label: 'Acumulación de Residuos' },
-  { value: 'CONTENEDOR', label: 'Contenedor Dañado' },
-  { value: 'DERRAME', label: 'Derrame' },
-  { value: 'OTRO', label: 'Otro' },
+  { value: 'acopio', label: 'Punto de Acopio' },
+  { value: 'zona_critica', label: 'Zona Crítica' },
+  { value: 'animal_muerto', label: 'Animal Muerto' },
 ];
 
-const PRIORITY_LEVELS = [
-  { value: 'BAJA', label: 'Baja', color: '#4caf50' },
-  { value: 'MEDIA', label: 'Media', color: '#ff9800' },
-  { value: 'ALTA', label: 'Alta', color: '#f44336' },
-  { value: 'CRITICA', label: 'Crítica', color: '#d32f2f' },
+const GRAVEDAD_LEVELS = [
+  { value: 1, label: 'Baja', color: '#4caf50' },
+  { value: 3, label: 'Media', color: '#ff9800' },
+  { value: 5, label: 'Alta', color: '#f44336' },
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'REPORTADA', label: 'Reportada', color: '#757575' },
-  { value: 'EN_PROCESO', label: 'En Proceso', color: '#2196f3' },
-  { value: 'RESUELTA', label: 'Resuelta', color: '#4caf50' },
-  { value: 'CANCELADA', label: 'Cancelada', color: '#f44336' },
+  { value: 'pendiente', label: 'Pendiente', color: '#757575' },
+  { value: 'validada', label: 'Validada', color: '#9c27b0' },
+  { value: 'asignada', label: 'Asignada', color: '#2196f3' },
+  { value: 'completada', label: 'Completada', color: '#4caf50' },
+  { value: 'cancelada', label: 'Cancelada', color: '#f44336' },
 ];
 
 const IncidentsPage: React.FC = () => {
@@ -86,12 +82,11 @@ const IncidentsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [formData, setFormData] = useState({
-    tipo: 'ACUMULACION',
+    tipo: 'acopio',
     descripcion: '',
-    prioridad: 'MEDIA',
-    direccion: '',
+    gravedad: 3,
+    zona: 'occidental',
     latitud: -0.9346,
     longitud: -78.6156,
   });
@@ -100,14 +95,52 @@ const IncidentsPage: React.FC = () => {
     loadIncidents();
   }, []);
 
+  // Geocodificación reversa para obtener dirección desde coordenadas
+  const fetchAddress = async (lat: number, lon: number): Promise<string> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`
+      );
+      const data = await response.json();
+      if (data.address) {
+        const { road, house_number, neighbourhood, suburb, city, town, village } = data.address;
+        const parts = [
+          house_number,
+          road,
+          neighbourhood || suburb,
+          city || town || village
+        ].filter(Boolean);
+        return parts.join(', ') || 'Dirección no disponible';
+      }
+      return 'Dirección no disponible';
+    } catch (error) {
+      console.error('Error obteniendo dirección:', error);
+      return 'Dirección no disponible';
+    }
+  };
+
   const loadIncidents = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get('/incidents/');
-      setIncidents(response.data.results || response.data);
+      const data = await IncidenciasService.listarIncidencias();
+      // El backend devuelve un array directo: List[IncidenciaResponse]
+      const incidentsList = Array.isArray(data) ? data : (data?.incidents || data?.results || []);
+      
+      // Obtener direcciones para cada incidencia con coordenadas
+      const incidentsWithAddress = await Promise.all(
+        incidentsList.map(async (incident: Incident) => {
+          if (incident.lat && incident.lon && !incident.direccion) {
+            const direccion = await fetchAddress(incident.lat, incident.lon);
+            return { ...incident, direccion };
+          }
+          return incident;
+        })
+      );
+      
+      setIncidents(incidentsWithAddress);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al cargar incidencias');
+      setError(toErrorMessage(err) || 'Error al cargar incidencias');
       console.error('Error loading incidents:', err);
     } finally {
       setLoading(false);
@@ -116,32 +149,38 @@ const IncidentsPage: React.FC = () => {
 
   const handleCreateIncident = async () => {
     try {
+      const lat = typeof formData.latitud === 'number' && !isNaN(formData.latitud) ? formData.latitud : null;
+      const lon = typeof formData.longitud === 'number' && !isNaN(formData.longitud) ? formData.longitud : null;
+      
       const payload = {
         tipo: formData.tipo,
-        descripcion: formData.descripcion,
-        prioridad: formData.prioridad,
-        direccion: formData.direccion,
-        ubicacion: {
-          type: 'Point',
-          coordinates: [formData.longitud, formData.latitud],
-        },
+        descripcion: formData.descripcion.trim(),
+        gravedad: Number(formData.gravedad) || 2,
+        lat,
+        lon,
+        zona: formData.zona.trim(),
+        foto_url: null,
+        usuario_id: 1,
       };
       
-      await api.post('/incidents/', payload);
+      console.log('[DEBUG] Payload enviado:', payload);
+      await IncidenciasService.crearIncidencia(payload);
       setOpenDialog(false);
       resetForm();
       loadIncidents();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al crear incidencia');
+      const errorMsg = toErrorMessage(err) || 'Error al crear incidencia';
+      console.error('[ERROR] Crear incidencia:', err, errorMsg);
+      setError(errorMsg);
     }
   };
 
   const handleUpdateStatus = async (id: number, estado: string) => {
     try {
-      await api.patch(`/incidents/${id}/`, { estado });
+      await IncidenciasService.actualizarIncidencia(id, { estado });
       loadIncidents();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al actualizar estado');
+      setError(toErrorMessage(err) || 'Error al actualizar estado');
     }
   };
 
@@ -149,27 +188,153 @@ const IncidentsPage: React.FC = () => {
     if (!window.confirm('¿Está seguro de eliminar esta incidencia?')) return;
     
     try {
-      await api.delete(`/incidents/${id}/`);
+      await IncidenciasService.eliminarIncidencia(id);
       loadIncidents();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al eliminar incidencia');
+      setError(toErrorMessage(err) || 'Error al eliminar incidencia');
     }
+  };
+
+  const handleGeneratePDF = (incident: Incident) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      setError('No se pudo abrir la ventana de impresión. Verifica los permisos del navegador.');
+      return;
+    }
+
+    const tipoLabel = INCIDENT_TYPES.find(t => t.value === incident.tipo)?.label || incident.tipo;
+    const estadoLabel = STATUS_OPTIONS.find(s => s.value === incident.estado)?.label || incident.estado;
+    const gravedadLabel = GRAVEDAD_LEVELS.find(g => g.value === incident.gravedad)?.label || `Nivel ${incident.gravedad}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Reporte de Incidencia #${incident.id}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            color: #333;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 3px solid #2196f3;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196f3;
+          }
+          .title {
+            font-size: 20px;
+            margin-top: 10px;
+          }
+          .section {
+            margin-bottom: 20px;
+          }
+          .label {
+            font-weight: bold;
+            color: #666;
+            display: inline-block;
+            width: 150px;
+          }
+          .value {
+            color: #333;
+          }
+          .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 15px;
+            background-color: #e0e0e0;
+            font-size: 14px;
+            margin-left: 10px;
+          }
+          .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+          }
+          @media print {
+            body { padding: 20px; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">EPAGAL - Latacunga</div>
+          <div class="title">Reporte de Incidencia #${incident.id}</div>
+        </div>
+
+        <div class="section">
+          <div><span class="label">Tipo:</span> <span class="value">${tipoLabel}</span></div>
+        </div>
+
+        <div class="section">
+          <div><span class="label">Descripción:</span></div>
+          <div class="value" style="margin-top: 10px;">${incident.descripcion || 'Sin descripción'}</div>
+        </div>
+
+        <div class="section">
+          <div><span class="label">Gravedad:</span> <span class="value">${gravedadLabel}</span></div>
+        </div>
+
+        <div class="section">
+          <div><span class="label">Estado:</span> <span class="value">${estadoLabel}</span></div>
+        </div>
+
+        <div class="section">
+          <div><span class="label">Zona:</span> <span class="value">${incident.zona || 'No especificada'}</span></div>
+        </div>
+
+        <div class="section">
+          <div><span class="label">Dirección:</span></div>
+          <div class="value" style="margin-top: 5px;">${incident.direccion || 'No disponible'}</div>
+        </div>
+
+        <div class="section">
+          <div><span class="label">Coordenadas:</span> <span class="value">Lat: ${incident.lat?.toFixed(6) || 'N/A'}, Lon: ${incident.lon?.toFixed(6) || 'N/A'}</span></div>
+        </div>
+
+        <div class="section">
+          <div><span class="label">Fecha de Reporte:</span> <span class="value">${incident.created_at ? new Date(incident.created_at).toLocaleString('es-EC') : 'No disponible'}</span></div>
+        </div>
+
+        <div class="footer">
+          <p>Sistema de Gestión de Incidencias - EPAGAL Latacunga</p>
+          <p>Generado: ${new Date().toLocaleString('es-EC')}</p>
+        </div>
+
+        <div class="no-print" style="text-align: center; margin-top: 30px;">
+          <button onclick="window.print()" style="padding: 10px 30px; background-color: #2196f3; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Imprimir / Guardar PDF</button>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   const resetForm = () => {
     setFormData({
       tipo: 'ACUMULACION',
       descripcion: '',
-      prioridad: 'MEDIA',
-      direccion: '',
+      gravedad: 2,
+      zona: 'Latacunga',
       latitud: -0.9346,
       longitud: -78.6156,
     });
-    setSelectedIncident(null);
   };
 
-  const getPriorityColor = (prioridad: string) => {
-    return PRIORITY_LEVELS.find(p => p.value === prioridad)?.color || '#757575';
+  const getGravedadColor = (gravedad: number) => {
+    return GRAVEDAD_LEVELS.find(p => p.value === gravedad)?.color || '#757575';
   };
 
   const getStatusColor = (estado: string) => {
@@ -222,37 +387,54 @@ const IncidentsPage: React.FC = () => {
             <MapContainer
               center={[-0.9346, -78.6156]}
               zoom={13}
+              maxBounds={[
+                [-1.05, -78.75],  // Esquina suroeste (límite sur y oeste)
+                [-0.82, -78.48]   // Esquina noreste (límite norte y este)
+              ]}
+              maxBoundsViscosity={1.0}
+              minZoom={12}
+              maxZoom={18}
               style={{ height: '350px', width: '100%' }}
             >
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               />
-              {incidents.map((incident) => (
-                <Marker
-                  key={incident.id}
-                  position={[
-                    incident.ubicacion.coordinates[1],
-                    incident.ubicacion.coordinates[0],
-                  ]}
-                >
-                  <Popup>
-                    <strong>{INCIDENT_TYPES.find(t => t.value === incident.tipo)?.label}</strong>
-                    <br />
-                    {incident.descripcion}
-                    <br />
-                    <Chip
-                      label={incident.prioridad}
-                      size="small"
-                      sx={{
-                        mt: 1,
-                        bgcolor: getPriorityColor(incident.prioridad),
-                        color: 'white',
-                      }}
-                    />
-                  </Popup>
-                </Marker>
-              ))}
+              {incidents
+                .map((incident) => {
+                  const lat = incident.lat;
+                  const lon = incident.lon;
+                  if (lat === undefined || lon === undefined) return null;
+                  return (
+                    <Marker
+                      key={incident.id}
+                      position={[lat, lon]}
+                    >
+                      <Popup>
+                        <strong>{INCIDENT_TYPES.find(t => t.value === incident.tipo)?.label || incident.tipo}</strong>
+                        <br />
+                        {incident.descripcion}
+                        <br />
+                        <Box sx={{ mt: 1, mb: 1 }}>
+                          <LocationIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5, fontSize: 14 }} />
+                          <Typography variant="caption" component="span">
+                            {incident.direccion || 'Obteniendo dirección...'}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={`Gravedad ${incident.gravedad ?? 1}`}
+                          size="small"
+                          sx={{
+                            mt: 1,
+                            bgcolor: getGravedadColor(incident.gravedad ?? 1),
+                            color: 'white',
+                          }}
+                        />
+                      </Popup>
+                    </Marker>
+                  );
+                })
+                .filter(Boolean)}
             </MapContainer>
           </Paper>
 
@@ -270,10 +452,10 @@ const IncidentsPage: React.FC = () => {
                         variant="outlined"
                       />
                       <Chip
-                        label={incident.prioridad}
+                        label={`Gravedad ${incident.gravedad}`}
                         size="small"
                         sx={{
-                          bgcolor: getPriorityColor(incident.prioridad),
+                          bgcolor: getGravedadColor(incident.gravedad),
                           color: 'white',
                         }}
                       />
@@ -286,21 +468,21 @@ const IncidentsPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <LocationIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
                       <Typography variant="caption" color="text.secondary">
-                        {incident.direccion}
+                        Zona: {incident.zona}
                       </Typography>
                     </Box>
 
                     <Chip
-                      label={STATUS_OPTIONS.find(s => s.value === incident.estado)?.label}
+                      label={STATUS_OPTIONS.find(s => s.value === incident.estado)?.label || 'Reportada'}
                       size="small"
                       sx={{
-                        bgcolor: getStatusColor(incident.estado),
+                        bgcolor: getStatusColor(incident.estado || 'REPORTADA'),
                         color: 'white',
                       }}
                     />
 
                     <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-                      Reportado: {new Date(incident.created_at).toLocaleDateString()}
+                      Creado: {incident.created_at ? new Date(incident.created_at).toLocaleDateString() : 'N/D'}
                     </Typography>
                   </CardContent>
                   
@@ -318,6 +500,14 @@ const IncidentsPage: React.FC = () => {
                         </MenuItem>
                       ))}
                     </TextField>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => handleGeneratePDF(incident)}
+                      title="Generar PDF"
+                    >
+                      <PdfIcon />
+                    </IconButton>
                     <IconButton
                       size="small"
                       color="error"
@@ -373,15 +563,15 @@ const IncidentsPage: React.FC = () => {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 select
                 fullWidth
-                label="Prioridad"
-                value={formData.prioridad}
-                onChange={(e) => setFormData({ ...formData, prioridad: e.target.value })}
+                label="Gravedad"
+                value={formData.gravedad}
+                onChange={(e) => setFormData({ ...formData, gravedad: Number(e.target.value) })}
               >
-                {PRIORITY_LEVELS.map((level) => (
+                {GRAVEDAD_LEVELS.map((level) => (
                   <MenuItem key={level.value} value={level.value}>
                     {level.label}
                   </MenuItem>
@@ -389,12 +579,12 @@ const IncidentsPage: React.FC = () => {
               </TextField>
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Dirección"
-                value={formData.direccion}
-                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                label="Zona"
+                value={formData.zona}
+                onChange={(e) => setFormData({ ...formData, zona: e.target.value })}
               />
             </Grid>
 

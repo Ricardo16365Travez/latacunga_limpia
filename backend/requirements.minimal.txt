@@ -1,8 +1,0 @@
-# Dependencias esenciales para pruebas
-Django==4.2.7
-djangorestframework==3.14.0
-django-cors-headers==4.3.1
-psycopg2-binary==2.9.9
-python-decouple==3.8
-djangorestframework-gis==1.0
-django-leaflet==0.30.1

@@ -1,0 +1,7 @@
+{
+  "description": "Zona crítica con acumulación excesiva de residuos en Av. Unidad Nacional",
+  "type": "critico",
+  "location_lat": -0.934915,
+  "location_lon": -78.617142,
+  "photo_url": "https://example.com/photos/zona1.jpg"
+}

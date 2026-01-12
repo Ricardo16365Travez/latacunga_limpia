@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pytest_cache/
+.coverage*
+htmlcov/
+
+# Environments
+.venv/
+.env
+.env.*
+
+# Node/Frontend
+node_modules/
+dist/
+build/
+
+# Local tooling
+.vscode/
+.idea/
+
+# Generated/temporary
+*.log
+*.tmp
+*.swp
+
+# Project-specific
+backend-routing/

@@ -1,0 +1,15 @@
+# Reduce el tamaño del contexto para el build del frontend
+.git
+.venv
+node_modules
+frontend/node_modules
+backend/
+database/
+docs/
+nginx/
+test_*.py
+*.md
+*.ps1
+*.sh
+*.bat
+test_report.json

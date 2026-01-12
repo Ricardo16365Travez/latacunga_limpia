@@ -1,29 +1,46 @@
 import api from './apiService';
 import { API_ENDPOINTS } from '../config/api';
 
-export const generarRuta = async (zona: string) => {
-  const { data } = await api.post(API_ENDPOINTS.RUTAS.GENERAR(zona));
+// Rutas - CRUD expuesto por FastAPI
+
+export const listarRutas = async (params?: { skip?: number; limit?: number }) => {
+  const query = new URLSearchParams();
+  if (params?.skip !== undefined) query.append('skip', String(params.skip));
+  if (params?.limit !== undefined) query.append('limit', String(params.limit));
+  const url = `${API_ENDPOINTS.RUTAS.LISTAR}?${query.toString()}`;
+  const { data } = await api.get(url);
   return data;
 };
 
-export const obtenerRuta = async (rutaId: number) => {
-  const { data } = await api.get(API_ENDPOINTS.RUTAS.OBTENER(rutaId));
-  return data; // { id, zona, puntos[], polyline? }
+export const obtenerRuta = async (routeId: string | number) => {
+  const { data } = await api.get(API_ENDPOINTS.RUTAS.OBTENER(routeId));
+  return data;
 };
 
-export const obtenerDetallesRuta = async (rutaId: number) => {
-  const { data } = await api.get(API_ENDPOINTS.RUTAS.DETALLES(rutaId));
-  return data; // { ruta, incidencias[], puntos[] }
+export const crearRuta = async (payload: any) => {
+  const { data } = await api.post(API_ENDPOINTS.RUTAS.CREAR, payload);
+  return data;
 };
 
-export const listarRutasPorZona = async (zona: string) => {
+export const actualizarRuta = async (routeId: string | number, payload: any) => {
+  const { data } = await api.patch(API_ENDPOINTS.RUTAS.ACTUALIZAR(routeId), payload);
+  return data;
+};
+
+export const eliminarRuta = async (routeId: string | number) => {
+  await api.delete(API_ENDPOINTS.RUTAS.ELIMINAR(routeId));
+};
+
+export const rutasPorZona = async (zona: string) => {
   const { data } = await api.get(API_ENDPOINTS.RUTAS.POR_ZONA(zona));
-  return data; // { total, rutas: [] }
+  return data;
 };
 
 export default {
-  generarRuta,
+  listarRutas,
   obtenerRuta,
-  obtenerDetallesRuta,
-  listarRutasPorZona,
+  crearRuta,
+  actualizarRuta,
+  eliminarRuta,
+  rutasPorZona,
 };

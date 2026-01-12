@@ -28,17 +28,17 @@ import {
   CheckCircle as CheckIcon,
   Delete as DeleteIcon,
   PlayArrow as StartIcon,
-  Stop as StopIcon,
 } from '@mui/icons-material';
-import api from '../../services/apiService';
+import tareasService from '../../services/tareasService';
+import { toErrorMessage } from '../../services/errorUtils';
 
 interface Task {
   id: number;
   titulo: string;
   descripcion: string;
-  estado: string;
-  prioridad: string;
-  tipo: string;
+  estado?: string;
+  prioridad?: string;
+  tipo?: string;
   asignado_a?: {
     display_name: string;
     email: string;
@@ -47,9 +47,9 @@ interface Task {
     nombre: string;
   };
   fecha_limite?: string;
-  progreso: number;
-  created_at: string;
-  updated_at: string;
+  progreso?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const TASK_TYPES = [
@@ -94,10 +94,10 @@ const TasksPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get('/tasks/');
-      setTasks(response.data.results || response.data);
+      const data = await tareasService.listarTareas();
+      setTasks((data.tareas || []) as any);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al cargar tareas');
+      setError(toErrorMessage(err) || 'Error al cargar tareas');
       console.error('Error loading tasks:', err);
     } finally {
       setLoading(false);
@@ -105,52 +105,25 @@ const TasksPage: React.FC = () => {
   };
 
   const handleCreateTask = async () => {
-    try {
-      await api.post('/tasks/', formData);
-      setOpenDialog(false);
-      resetForm();
-      loadTasks();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al crear tarea');
-    }
+    setError('Crear tareas no está disponible en el backend actual.');
   };
 
   const handleUpdateStatus = async (id: number, estado: string) => {
-    try {
-      await api.patch(`/tasks/${id}/`, { estado });
-      loadTasks();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al actualizar estado');
-    }
+    setError('Actualizar tareas no está disponible en el backend actual.');
   };
 
   const handleStartTask = async (id: number) => {
-    try {
-      await api.post(`/tasks/${id}/start/`);
-      loadTasks();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al iniciar tarea');
-    }
+    setError('Iniciar tareas no está disponible en el backend actual.');
   };
 
   const handleCompleteTask = async (id: number) => {
-    try {
-      await api.post(`/tasks/${id}/complete/`);
-      loadTasks();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al completar tarea');
-    }
+    setError('Completar tareas no está disponible en el backend actual.');
   };
 
   const handleDeleteTask = async (id: number) => {
     if (!window.confirm('¿Está seguro de eliminar esta tarea?')) return;
     
-    try {
-      await api.delete(`/tasks/${id}/`);
-      loadTasks();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al eliminar tarea');
-    }
+    setError('Eliminar tareas no está disponible en el backend actual.');
   };
 
   const resetForm = () => {
@@ -282,7 +255,7 @@ const TasksPage: React.FC = () => {
                         label={task.prioridad}
                         size="small"
                         sx={{
-                          bgcolor: getPriorityColor(task.prioridad),
+                          bgcolor: getPriorityColor(task.prioridad || 'MEDIA'),
                           color: 'white',
                         }}
                       />
@@ -329,7 +302,7 @@ const TasksPage: React.FC = () => {
                         label={TASK_STATUS.find(s => s.value === task.estado)?.label}
                         size="small"
                         sx={{
-                          bgcolor: getStatusColor(task.estado),
+                          bgcolor: getStatusColor(task.estado || 'PENDIENTE'),
                           color: 'white',
                         }}
                       />

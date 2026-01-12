@@ -1,75 +1,17 @@
 services:
-  # Backend Django
+  # Frontend React que consume backend de Andrea
   - type: web
-    name: residuos-backend
+    name: epagal-frontend
     plan: free
+    branch: appmod/python-migration-20251218221037
     dockerfile: ./Dockerfile
     dockerContext: ./
-    healthCheckPath: /health/
+    healthCheckPath: /
     healthCheckStartupTimeout: 300
+    ports:
+      - port: 3000
     envVars:
-      - key: DEBUG
-        value: "False"
-      - key: ENVIRONMENT
+        - key: REACT_APP_API_BASE
+          value: "https://epagal-backend-routing-latest.onrender.com"
+      - key: NODE_ENV
         value: "production"
-      - key: ALLOWED_HOSTS
-        scope: build,runtime
-        sync: false
-      - key: SECRET_KEY
-        scope: build,runtime
-        sync: false
-      - key: DATABASE_URL
-        scope: build,runtime
-        sync: false
-      - key: REDIS_URL
-        scope: build,runtime
-        sync: false
-      - key: RABBITMQ_URL
-        scope: build,runtime
-        sync: false
-      - key: SUPABASE_URL
-        scope: build,runtime
-        sync: false
-      - key: SUPABASE_KEY
-        scope: build,runtime
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        scope: build,runtime
-        sync: false
-      - key: PORT
-        value: "10000"
-      - key: WORKERS
-        value: "2"
-    disk:
-      name: django_staticfiles
-      path: /var/data/staticfiles
-      sizeGB: 1
-
-  # Frontend React
-  - type: static_site
-    name: residuos-frontend
-    runtime: node
-    plan: free
-    buildCommand: >
-      cd frontend &&
-      npm install &&
-      npm run build
-    staticPublishPath: frontend/build
-    envVars:
-      - key: REACT_APP_API_URL
-        value: "https://residuos-backend.onrender.com/api"
-      - key: REACT_APP_WEBSOCKET_URL
-        value: "wss://residuos-backend.onrender.com/ws"
-    routes:
-      - path: "/"
-        destination: "/index.html"
-
-  # Base de Datos PostgreSQL (Opcional - usar Supabase o Render DB)
-  # Descomenta si deseas crear la BD en Render (requiere plan pago)
-  # - type: pserv
-  #   name: residuos-db
-  #   plan: starter
-  #   postgresVersion: 15
-  #   databaseName: residuos_latacunga
-  #   username: postgres
-  #   ipAllowList: []

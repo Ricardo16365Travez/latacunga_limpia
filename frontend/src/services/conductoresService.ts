@@ -1,36 +1,55 @@
 import api from './apiService';
 import { API_ENDPOINTS } from '../config/api';
 
-export const misRutasTodas = async (estado?: string) => {
-  const url = API_ENDPOINTS.CONDUCTORES.MIS_RUTAS_TODAS + (estado ? `?estado=${estado}` : '');
+// ==================== CONDUCTORES CRUD ====================
+
+export const listarConductores = async (params?: { skip?: number; limit?: number }) => {
+  const query = new URLSearchParams();
+  if (params?.skip !== undefined) query.append('skip', String(params.skip));
+  if (params?.limit !== undefined) query.append('limit', String(params.limit));
+  const url = `${API_ENDPOINTS.CONDUCTORES.LISTAR}?${query.toString()}`;
   const { data } = await api.get(url);
-  return data; // { total, asignado, iniciado, completado, rutas: [] }
+  return data;
+};
+
+export const obtenerConductor = async (driverId: string | number) => {
+  const { data } = await api.get(API_ENDPOINTS.CONDUCTORES.OBTENER(driverId));
+  return data;
+};
+
+export const crearConductor = async (payload: any) => {
+  const { data } = await api.post(API_ENDPOINTS.CONDUCTORES.CREAR, payload);
+  return data;
+};
+
+export const actualizarConductor = async (driverId: string | number, payload: any) => {
+  const { data } = await api.patch(API_ENDPOINTS.CONDUCTORES.ACTUALIZAR(driverId), payload);
+  return data;
+};
+
+export const eliminarConductor = async (driverId: string | number) => {
+  await api.delete(API_ENDPOINTS.CONDUCTORES.ELIMINAR(driverId));
+};
+
+// ==================== RUTAS DEL CONDUCTOR ====================
+
+export const misRutasTodas = async () => {
+  const { data } = await api.get(API_ENDPOINTS.CONDUCTORES.MIS_RUTAS_TODAS);
+  return data;
 };
 
 export const miRutaActual = async () => {
   const { data } = await api.get(API_ENDPOINTS.CONDUCTORES.MIS_RUTAS_ACTUAL);
-  return data; // { message, ruta_actual }
-};
-
-export const iniciarRuta = async (rutaId: number) => {
-  const { data } = await api.post(API_ENDPOINTS.CONDUCTORES.INICIAR_RUTA, { ruta_id: rutaId });
-  return data; // { message, asignacion_id, ruta_id, fecha_inicio, estado }
-};
-
-export const finalizarRuta = async (rutaId: number, notas?: string) => {
-  const { data } = await api.post(API_ENDPOINTS.CONDUCTORES.FINALIZAR_RUTA, { ruta_id: rutaId, notas });
-  return data; // { message, asignacion_id, ruta_id, fecha_finalizacion, estado }
-};
-
-export const asignacionesPorRuta = async (rutaId: number) => {
-  const { data } = await api.get(API_ENDPOINTS.CONDUCTORES.ASIGNACIONES_RUTA(rutaId));
-  return data; // Lista de asignaciones
+  return data;
 };
 
 export default {
+  listarConductores,
+  obtenerConductor,
+  crearConductor,
+  actualizarConductor,
+  eliminarConductor,
   misRutasTodas,
   miRutaActual,
-  iniciarRuta,
-  finalizarRuta,
-  asignacionesPorRuta,
 };
+
